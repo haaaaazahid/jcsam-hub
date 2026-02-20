@@ -1,21 +1,23 @@
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useData } from "@/context/DataContext";
-import { FiSearch, FiX, FiDownload } from "react-icons/fi";
+import { useNotices, useSports } from "@/hooks/useSupabaseData";
+import { FiSearch, FiX, FiDownload, FiLoader } from "react-icons/fi";
 
 const NoticesPage = () => {
-  const { notices, sports } = useData();
+  const { data: notices = [], isLoading } = useNotices();
+  const { data: sports = [] } = useSports();
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [selectedNotice, setSelectedNotice] = useState<string | null>(null);
 
-  const filtered = notices.filter(n => {
+  const filtered = notices.filter((n: any) => {
     const matchSearch = n.title.toLowerCase().includes(search.toLowerCase()) || n.content.toLowerCase().includes(search.toLowerCase());
-    const matchSport = sportFilter === "all" || (sportFilter === "general" ? !n.sportId : n.sportId === sportFilter);
+    const matchSport = sportFilter === "all" || (sportFilter === "general" ? !n.sport_id : n.sport_id === sportFilter);
     return matchSearch && matchSport;
   });
 
-  const selected = notices.find(n => n.id === selectedNotice);
+  const selected = notices.find((n: any) => n.id === selectedNotice) as any;
 
   return (
     <div className="page-container py-12">
@@ -42,61 +44,65 @@ const NoticesPage = () => {
         >
           <option value="all">All Categories</option>
           <option value="general">General</option>
-          {sports.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {sports.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        {filtered.map((notice, i) => {
-          const sport = sports.find(s => s.id === notice.sportId);
-          return (
-            <motion.div
-              key={notice.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              onClick={() => setSelectedNotice(notice.id)}
-              className="notice-card cursor-pointer"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className={notice.priority === "urgent" ? "priority-urgent" : notice.priority === "important" ? "priority-important" : "priority-normal"}>
-                  {notice.priority}
-                </span>
-                {sport && <span className="text-xs text-secondary font-medium">{sport.icon} {sport.name}</span>}
-                {!notice.sportId && <span className="text-xs text-muted-foreground">📢 General</span>}
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">{notice.title}</h3>
-              <p className="text-sm text-muted-foreground line-clamp-2">{notice.content}</p>
-              <p className="text-xs text-muted-foreground mt-3">{notice.date}</p>
-            </motion.div>
-          );
-        })}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-12"><FiLoader className="w-6 h-6 animate-spin text-primary" /></div>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {filtered.map((notice: any, i: number) => {
+            const sport = sports.find((s: any) => s.id === notice.sport_id) as any;
+            return (
+              <motion.div
+                key={notice.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                onClick={() => setSelectedNotice(notice.id)}
+                className="notice-card cursor-pointer"
+              >
+                {notice.image && (
+                  <img src={notice.image} alt="" className="w-full h-32 object-cover rounded-lg mb-3" />
+                )}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={notice.priority === "urgent" ? "priority-urgent" : notice.priority === "important" ? "priority-important" : "priority-normal"}>
+                    {notice.priority}
+                  </span>
+                  {sport && <span className="text-xs text-secondary font-medium">{sport.icon} {sport.name}</span>}
+                  {!notice.sport_id && <span className="text-xs text-muted-foreground">📢 General</span>}
+                </div>
+                <h3 className="font-semibold text-foreground mb-2">{notice.title}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-2">{notice.content}</p>
+                <p className="text-xs text-muted-foreground mt-3">{notice.date}</p>
+              </motion.div>
+            );
+          })}
+          {filtered.length === 0 && <p className="col-span-2 text-center text-muted-foreground py-12">No notices found.</p>}
+        </div>
+      )}
 
-      {/* Modal */}
       <AnimatePresence>
         {selected && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4" onClick={() => setSelectedNotice(null)}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card rounded-xl shadow-2xl w-full max-w-lg p-6"
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <span className={selected.priority === "urgent" ? "priority-urgent" : selected.priority === "important" ? "priority-important" : "priority-normal"}>
-                  {selected.priority}
-                </span>
+                <span className={selected.priority === "urgent" ? "priority-urgent" : selected.priority === "important" ? "priority-important" : "priority-normal"}>{selected.priority}</span>
                 <button onClick={() => setSelectedNotice(null)} className="p-2 rounded-lg hover:bg-muted"><FiX /></button>
               </div>
+              {selected.image && <img src={selected.image} alt="" className="w-full h-40 object-cover rounded-lg mb-4" />}
               <h2 className="text-xl font-display font-bold text-foreground mb-3">{selected.title}</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">{selected.content}</p>
               <p className="text-xs text-muted-foreground">{selected.date}</p>
-              {selected.pdfUrl && (
-                <button className="mt-4 btn-primary text-sm flex items-center gap-2">
+              {selected.pdf_url && (
+                <a href={selected.pdf_url} target="_blank" rel="noopener noreferrer" className="mt-4 btn-primary text-sm flex items-center gap-2 w-fit">
                   <FiDownload /> Download PDF
-                </button>
+                </a>
               )}
             </motion.div>
           </div>
