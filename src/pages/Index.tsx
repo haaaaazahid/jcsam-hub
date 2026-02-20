@@ -1,13 +1,18 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useData } from "@/context/DataContext";
+import { useDashboardStats, useSchedules } from "@/hooks/useSupabaseData";
 import StatCounter from "@/components/StatCounter";
 import { FiCalendar, FiUsers, FiAward, FiArrowRight } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
 
 const Index = () => {
-  const { sports, colleges, players, schedules, notices } = useData();
-  const upcomingMatches = schedules.filter(s => s.status === "upcoming").slice(0, 3);
+  const { data: stats } = useDashboardStats();
+  const { data: allSchedules = [] } = useSchedules();
+  const sports = stats?.sports ?? [];
+  const colleges = stats?.colleges ?? [];
+  const players = stats?.players ?? [];
+  const notices = stats?.notices ?? [];
+  const upcomingMatches = allSchedules.filter((s: any) => s.status === "upcoming").slice(0, 3);
 
   return (
     <div>
@@ -58,7 +63,7 @@ const Index = () => {
           <StatCounter end={sports.length} label="Sports" icon={<MdSportsCricket className="w-8 h-8" />} />
           <StatCounter end={colleges.length} label="Colleges" icon={<FiUsers className="w-8 h-8" />} delay={200} />
           <StatCounter end={players.length} label="Players" icon={<FiAward className="w-8 h-8" />} delay={400} suffix="+" />
-          <StatCounter end={schedules.length} label="Matches" icon={<FiCalendar className="w-8 h-8" />} delay={600} />
+          <StatCounter end={allSchedules.length} label="Matches" icon={<FiCalendar className="w-8 h-8" />} delay={600} />
         </div>
       </section>
 
@@ -77,8 +82,8 @@ const Index = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <Link to={`/sports/${sport.slug}`} className="sport-card flex flex-col items-center p-5 text-center group">
-                <span className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{sport.icon}</span>
+              <Link to={`/sports/${(sport as any).slug}`} className="sport-card flex flex-col items-center p-5 text-center group">
+                <span className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{(sport as any).icon}</span>
                 <span className="text-sm font-semibold text-foreground">{sport.name}</span>
               </Link>
             </motion.div>
@@ -95,7 +100,7 @@ const Index = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {upcomingMatches.map((match, i) => {
-              const sport = sports.find(s => s.id === match.sportId);
+              const sport = (match as any).sports || sports.find((s: any) => s.id === (match as any).sport_id);
               return (
                 <motion.div
                   key={match.id}
@@ -132,7 +137,7 @@ const Index = () => {
           <h2 className="section-title">Latest <span className="text-gradient">Notices</span></h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          {notices.slice(0, 4).map((notice, i) => (
+          {notices.slice(0, 4).map((notice: any, i: number) => (
             <motion.div
               key={notice.id}
               initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}

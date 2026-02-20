@@ -1,10 +1,12 @@
+
 import { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import {
   FiHome, FiGrid, FiUsers, FiUserCheck, FiCalendar, FiAward,
-  FiBell, FiImage, FiLogOut, FiMenu, FiChevronLeft, FiActivity
+  FiBell, FiImage, FiLogOut, FiMenu, FiChevronLeft, FiActivity, FiKey, FiX
 } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
 
@@ -22,13 +24,33 @@ const sidebarItems = [
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const { logout, user } = useAuth();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const { logout, user, updatePassword } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/admin/login");
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) { toast.error("Passwords do not match"); return; }
+    if (newPassword.length < 6) { toast.error("Min 6 characters required"); return; }
+    setPwLoading(true);
+    const ok = await updatePassword(newPassword);
+    setPwLoading(false);
+    if (ok) {
+      toast.success("Password updated successfully!");
+      setChangePasswordOpen(false);
+      setNewPassword(""); setConfirmPassword("");
+    } else {
+      toast.error("Failed to update password");
+    }
   };
 
   return (
@@ -73,12 +95,20 @@ const AdminLayout = () => {
           })}
         </nav>
 
-        <div className="p-2 border-t border-sidebar-border">
+        <div className="p-2 border-t border-sidebar-border space-y-1">
           {!collapsed && (
-            <div className="px-3 py-2 text-xs text-sidebar-foreground/60 mb-1">
-              Logged in as <span className="font-semibold">{user?.username}</span>
+            <div className="px-3 py-2 text-xs text-sidebar-foreground/60">
+              Logged in as <span className="font-semibold">{user?.email?.split("@")[0]}</span>
             </div>
           )}
+          <button
+            onClick={() => setChangePasswordOpen(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            title={collapsed ? "Change Password" : undefined}
+          >
+            <FiKey className="text-lg flex-shrink-0" />
+            {!collapsed && <span>Change Password</span>}
+          </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
@@ -89,13 +119,59 @@ const AdminLayout = () => {
           </button>
           <Link
             to="/"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors mt-1"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <FiHome className="text-lg flex-shrink-0" />
             {!collapsed && <span>View Site</span>}
           </Link>
         </div>
       </aside>
+
+      {/* Change Password Modal */}
+      {changePasswordOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display font-bold text-lg flex items-center gap-2"><FiKey /> Change Password</h3>
+              <button onClick={() => setChangePasswordOpen(false)} className="p-1.5 rounded-lg hover:bg-muted">
+                <FiX className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">New Password</label>
+                <input
+                  type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  required minLength={6}
+                  className="w-full px-3 py-2 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Min 6 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Confirm Password</label>
+                <input
+                  type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Repeat password"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="submit" disabled={pwLoading} className="btn-primary flex-1 text-sm">
+                  {pwLoading ? "Updating..." : "Update Password"}
+                </button>
+                <button type="button" onClick={() => setChangePasswordOpen(false)} className="flex-1 px-3 py-2 rounded-lg border border-border text-sm hover:bg-muted">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className={`flex-1 ${collapsed ? "ml-16" : "ml-64"} transition-all duration-300`}>

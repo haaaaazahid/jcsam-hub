@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FiX, FiPlus, FiEdit2, FiTrash2, FiSearch } from "react-icons/fi";
+import { FiX, FiPlus, FiEdit2, FiTrash2, FiSearch, FiLoader } from "react-icons/fi";
 
 interface Column<T> {
   key: string;
@@ -11,9 +12,11 @@ interface Column<T> {
 interface Field {
   key: string;
   label: string;
-  type: "text" | "textarea" | "select" | "number" | "date" | "time";
+  type: "text" | "textarea" | "select" | "number" | "date" | "time" | "custom";
   options?: { value: string; label: string }[];
   required?: boolean;
+  min?: string;
+  renderCustom?: (value: any, onChange: (v: any) => void) => React.ReactNode;
 }
 
 interface CrudTableProps<T extends { id: string }> {
@@ -25,9 +28,13 @@ interface CrudTableProps<T extends { id: string }> {
   onEdit: (item: T) => void;
   onDelete: (id: string) => void;
   searchKey?: string;
+  loading?: boolean;
+  extraModalContent?: (form: Record<string, any>, setForm: (f: Record<string, any>) => void, editing: T | null) => React.ReactNode;
 }
 
-function CrudTable<T extends { id: string }>({ title, data, columns, fields, onAdd, onEdit, onDelete, searchKey }: CrudTableProps<T>) {
+function CrudTable<T extends { id: string }>({
+  title, data, columns, fields, onAdd, onEdit, onDelete, searchKey, loading = false, extraModalContent
+}: CrudTableProps<T>) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
   const [form, setForm] = useState<Record<string, any>>({});
@@ -86,40 +93,46 @@ function CrudTable<T extends { id: string }>({ title, data, columns, fields, onA
       </div>
 
       <div className="admin-card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              {columns.map(col => (
-                <th key={col.key} className="text-left px-4 py-3 font-semibold text-muted-foreground">{col.label}</th>
-              ))}
-              <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(item => (
-              <tr key={item.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <FiLoader className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
                 {columns.map(col => (
-                  <td key={col.key} className="px-4 py-3">
-                    {col.render ? col.render(item) : String((item as any)[col.key])}
-                  </td>
+                  <th key={col.key} className="text-left px-4 py-3 font-semibold text-muted-foreground">{col.label}</th>
                 ))}
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => openEdit(item)} className="p-2 rounded-lg hover:bg-accent text-primary transition-colors">
-                      <FiEdit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setDeleteConfirm(item.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors">
-                      <FiTrash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+                <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Actions</th>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">No records found.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map(item => (
+                <tr key={item.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                  {columns.map(col => (
+                    <td key={col.key} className="px-4 py-3">
+                      {col.render ? col.render(item) : String((item as any)[col.key] ?? "")}
+                    </td>
+                  ))}
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => openEdit(item)} className="p-2 rounded-lg hover:bg-accent text-primary transition-colors">
+                        <FiEdit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setDeleteConfirm(item.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors">
+                        <FiTrash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">No records found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Modal */}
@@ -128,7 +141,7 @@ function CrudTable<T extends { id: string }>({ title, data, columns, fields, onA
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-card rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6"
+            className="bg-card rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -139,7 +152,9 @@ function CrudTable<T extends { id: string }>({ title, data, columns, fields, onA
               {fields.map(field => (
                 <div key={field.key}>
                   <label className="block text-sm font-medium text-foreground mb-1">{field.label}</label>
-                  {field.type === "textarea" ? (
+                  {field.type === "custom" && field.renderCustom ? (
+                    field.renderCustom(form[field.key], (v) => setForm({ ...form, [field.key]: v }))
+                  ) : field.type === "textarea" ? (
                     <textarea
                       value={form[field.key] || ""}
                       onChange={e => setForm({ ...form, [field.key]: e.target.value })}
@@ -162,6 +177,7 @@ function CrudTable<T extends { id: string }>({ title, data, columns, fields, onA
                     <input
                       type={field.type}
                       value={form[field.key] || ""}
+                      min={field.min}
                       onChange={e => setForm({ ...form, [field.key]: field.type === "number" ? Number(e.target.value) : e.target.value })}
                       required={field.required}
                       className="w-full px-3 py-2 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -169,6 +185,7 @@ function CrudTable<T extends { id: string }>({ title, data, columns, fields, onA
                   )}
                 </div>
               ))}
+              {extraModalContent && extraModalContent(form, setForm, editing)}
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="btn-primary flex-1 text-sm">{editing ? "Update" : "Create"}</button>
                 <button type="button" onClick={() => setModalOpen(false)} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors">Cancel</button>
@@ -193,12 +210,8 @@ function CrudTable<T extends { id: string }>({ title, data, columns, fields, onA
               <button
                 onClick={() => { onDelete(deleteConfirm); setDeleteConfirm(null); }}
                 className="flex-1 px-4 py-2 rounded-lg bg-destructive text-destructive-foreground font-medium text-sm hover:opacity-90 transition-opacity"
-              >
-                Delete
-              </button>
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors">
-                Cancel
-              </button>
+              >Delete</button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors">Cancel</button>
             </div>
           </motion.div>
         </div>
