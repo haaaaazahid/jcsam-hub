@@ -22,20 +22,23 @@ const GalleryPage = () => {
           {gallery.map((img: any, i: number) => (
             <motion.div
               key={img.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.06, duration: 0.5 }}
+              whileHover={{ scale: 1.03 }}
               className="break-inside-avoid mb-4 cursor-pointer group"
               onClick={() => setLightboxIdx(i)}
             >
               <div className="relative rounded-xl overflow-hidden">
-                <img src={img.url} alt={img.caption} className="w-full rounded-xl group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                <img src={img.url} alt={img.caption} className="w-full rounded-xl group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                   <p className="text-primary-foreground text-sm font-medium">{img.caption}</p>
                 </div>
               </div>
             </motion.div>
           ))}
+          {gallery.length === 0 && <p className="text-center text-muted-foreground py-12 col-span-3">No photos yet.</p>}
         </div>
       )}
 
@@ -57,7 +60,8 @@ const GalleryPage = () => {
             </button>
             <motion.img
               key={lightboxIdx}
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
               src={(gallery[lightboxIdx] as any)?.url}
               alt={(gallery[lightboxIdx] as any)?.caption}
               className="max-h-[80vh] max-w-[90vw] rounded-xl object-contain"

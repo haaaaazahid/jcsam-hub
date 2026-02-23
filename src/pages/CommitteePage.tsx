@@ -23,9 +23,11 @@ const CommitteePage = () => {
           {committee.map((m: any, i: number) => (
             <motion.div
               key={m.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+              whileHover={{ y: -8, scale: 1.03 }}
               onClick={() => setSelected(m.id)}
               className="admin-card text-center cursor-pointer group"
             >
@@ -49,7 +51,10 @@ const CommitteePage = () => {
         {member && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4" onClick={() => setSelected(null)}>
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.8, opacity: 0, rotateY: -15 }}
+              animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+              exit={{ scale: 0.8, opacity: 0, rotateY: 15 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
               className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-8 text-center relative"
               onClick={e => e.stopPropagation()}
             >

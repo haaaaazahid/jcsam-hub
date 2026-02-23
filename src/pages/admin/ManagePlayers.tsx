@@ -1,35 +1,69 @@
 import CrudTable from "@/components/CrudTable";
-import { useData } from "@/context/DataContext";
-import type { Player } from "@/data/dummyData";
+import { usePlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer, useColleges, useSports } from "@/hooks/useSupabaseData";
+import { FiDownload } from "react-icons/fi";
+
+function downloadCSV(data: any[], colleges: any[], sports: any[], filename: string) {
+  if (!data.length) return;
+  const header = "Name,College,Sport,Age,Contact,Status";
+  const rows = data.map(p => {
+    const college = (p as any).colleges?.name || colleges.find((c: any) => c.id === p.college_id)?.name || "";
+    const sport = (p as any).sports?.name || sports.find((s: any) => s.id === p.sport_id)?.name || "";
+    return `"${p.name}","${college}","${sport}",${p.age},"+91 ${String(p.contact).replace(/^\+91\s?/, "")}","${p.status}"`;
+  });
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 const ManagePlayers = () => {
-  const { players, setPlayers, colleges, sports } = useData();
+  const { data: players = [], isLoading } = usePlayers();
+  const { data: colleges = [] } = useColleges();
+  const { data: sports = [] } = useSports();
+  const createPlayer = useCreatePlayer();
+  const updatePlayer = useUpdatePlayer();
+  const deletePlayer = useDeletePlayer();
+
   return (
-    <CrudTable<Player>
-      title="Manage Players"
-      data={players}
-      searchKey="name"
-      columns={[
-        { key: "name", label: "Name" },
-        { key: "collegeId", label: "College", render: (p) => colleges.find(c => c.id === p.collegeId)?.name || p.collegeId },
-        { key: "sportId", label: "Sport", render: (p) => sports.find(s => s.id === p.sportId)?.name || p.sportId },
-        { key: "age", label: "Age" },
-        { key: "status", label: "Status", render: (p) => (
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${p.status === "approved" ? "bg-success/10 text-success" : p.status === "pending" ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"}`}>{p.status}</span>
-        )},
-      ]}
-      fields={[
-        { key: "name", label: "Player Name", type: "text", required: true },
-        { key: "collegeId", label: "College", type: "select", options: colleges.map(c => ({ value: c.id, label: c.name })), required: true },
-        { key: "sportId", label: "Sport", type: "select", options: sports.map(s => ({ value: s.id, label: s.name })), required: true },
-        { key: "age", label: "Age", type: "number", required: true },
-        { key: "contact", label: "Contact", type: "text", required: true },
-        { key: "status", label: "Status", type: "select", options: [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }], required: true },
-      ]}
-      onAdd={(item) => setPlayers(prev => [...prev, { ...item, id: Date.now().toString(), idDocument: "" } as Player])}
-      onEdit={(item) => setPlayers(prev => prev.map(p => p.id === item.id ? item : p))}
-      onDelete={(id) => setPlayers(prev => prev.filter(p => p.id !== id))}
-    />
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          onClick={() => downloadCSV(players, colleges, sports, "players.csv")}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-colors"
+        >
+          <FiDownload className="w-4 h-4" /> Export CSV
+        </button>
+      </div>
+      <CrudTable
+        title="Manage Players"
+        data={players}
+        loading={isLoading}
+        searchKey="name"
+        columns={[
+          { key: "name", label: "Name" },
+          { key: "college_id", label: "College", render: (p) => (p as any).colleges?.name || colleges.find((c: any) => c.id === p.college_id)?.name || "" },
+          { key: "sport_id", label: "Sport", render: (p) => (p as any).sports?.name || sports.find((s: any) => s.id === p.sport_id)?.name || "" },
+          { key: "age", label: "Age" },
+          { key: "contact", label: "Contact", render: (p) => p.contact ? `+91 ${String(p.contact).replace(/^\+91\s?/, "")}` : "" },
+          { key: "status", label: "Status", render: (p) => (
+            <span className={`px-2 py-0.5 rounded text-xs font-bold ${p.status === "approved" ? "bg-success/10 text-success" : p.status === "pending" ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"}`}>{p.status}</span>
+          )},
+        ]}
+        fields={[
+          { key: "name", label: "Player Name", type: "text", required: true },
+          { key: "college_id", label: "College", type: "select", options: colleges.map((c: any) => ({ value: c.id, label: c.name })), required: true },
+          { key: "sport_id", label: "Sport", type: "select", options: sports.map((s: any) => ({ value: s.id, label: s.name })), required: true },
+          { key: "age", label: "Age", type: "number", required: true },
+          { key: "contact", label: "Contact (10 digits)", type: "text", required: true },
+          { key: "status", label: "Status", type: "select", options: [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }], required: true },
+        ]}
+        onAdd={(item) => createPlayer.mutate(item as any)}
+        onEdit={(item) => updatePlayer.mutate(item as any)}
+        onDelete={(id) => deletePlayer.mutate(id)}
+      />
+    </div>
   );
 };
 

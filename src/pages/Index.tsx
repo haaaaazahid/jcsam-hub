@@ -5,6 +5,13 @@ import StatCounter from "@/components/StatCounter";
 import { FiCalendar, FiUsers, FiAward, FiArrowRight } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
 
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { delay, duration: 0.6, ease: "easeOut" as const },
+});
+
 const Index = () => {
   const { data: stats } = useDashboardStats();
   const { data: allSchedules = [] } = useSchedules();
@@ -19,8 +26,16 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative min-h-[80vh] flex items-center gradient-hero overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-secondary blur-[100px]" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary blur-[120px]" />
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], x: [0, 20, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-20 left-10 w-72 h-72 rounded-full bg-secondary blur-[100px]"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], y: [0, -30, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary blur-[120px]"
+          />
         </div>
         <div className="page-container relative z-10 w-full">
           <motion.div
@@ -39,20 +54,37 @@ const Index = () => {
             </motion.div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-display font-black text-primary-foreground leading-tight mb-6">
               Junior College<br />
-              <span className="text-secondary">Sports Association</span><br />
+              <motion.span
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="text-secondary"
+              >
+                Sports Association
+              </motion.span><br />
               of Mumbai
             </h1>
-            <p className="text-lg text-primary-foreground/80 mb-8 max-w-xl">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-lg text-primary-foreground/80 mb-8 max-w-xl"
+            >
               Empowering junior college athletes across Mumbai through competitive sports, teamwork, and excellence.
-            </p>
-            <div className="flex flex-wrap gap-4">
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex flex-wrap gap-4"
+            >
               <Link to="/sports" className="btn-secondary text-base flex items-center gap-2">
                 Explore Sports <FiArrowRight />
               </Link>
               <Link to="/registration" className="btn-primary text-base !bg-primary-foreground/10 hover:!bg-primary-foreground/20 border border-primary-foreground/30">
                 Register Now
               </Link>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -69,18 +101,19 @@ const Index = () => {
 
       {/* Sports Grid */}
       <section className="page-container py-16">
-        <div className="text-center mb-12">
+        <motion.div {...fadeUp()} className="text-center mb-12">
           <h2 className="section-title">Our <span className="text-gradient">Sports</span></h2>
-          <p className="section-subtitle">15 competitive sports across Mumbai's junior colleges</p>
-        </div>
+          <p className="section-subtitle">Competitive disciplines across Mumbai's junior colleges</p>
+        </motion.div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {sports.map((sport, i) => (
             <motion.div
               key={sport.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * 0.06, duration: 0.5 }}
+              whileHover={{ y: -8, scale: 1.05 }}
             >
               <Link to={`/sports/${(sport as any).slug}`} className="sport-card flex flex-col items-center p-5 text-center group">
                 <span className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{(sport as any).icon}</span>
@@ -94,20 +127,21 @@ const Index = () => {
       {/* Upcoming Matches */}
       <section className="bg-muted/50">
         <div className="page-container py-16">
-          <div className="text-center mb-12">
+          <motion.div {...fadeUp()} className="text-center mb-12">
             <h2 className="section-title">Upcoming <span className="text-gradient">Matches</span></h2>
             <p className="section-subtitle">Don't miss the action</p>
-          </div>
+          </motion.div>
           <div className="grid md:grid-cols-3 gap-6">
             {upcomingMatches.map((match, i) => {
               const sport = (match as any).sports || sports.find((s: any) => s.id === (match as any).sport_id);
               return (
                 <motion.div
                   key={match.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: i * 0.15, duration: 0.5 }}
+                  whileHover={{ y: -6, scale: 1.02 }}
                   className="admin-card group"
                 >
                   <div className="flex items-center gap-2 mb-3">
@@ -124,25 +158,30 @@ const Index = () => {
                 </motion.div>
               );
             })}
+            {upcomingMatches.length === 0 && (
+              <p className="col-span-3 text-center text-muted-foreground py-8">No upcoming matches scheduled yet.</p>
+            )}
           </div>
-          <div className="text-center mt-8">
+          <motion.div {...fadeUp(0.3)} className="text-center mt-8">
             <Link to="/schedule" className="btn-primary text-sm">View Full Schedule</Link>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Latest Notices */}
       <section className="page-container py-16">
-        <div className="text-center mb-12">
+        <motion.div {...fadeUp()} className="text-center mb-12">
           <h2 className="section-title">Latest <span className="text-gradient">Notices</span></h2>
-        </div>
+        </motion.div>
         <div className="grid md:grid-cols-2 gap-4">
           {notices.slice(0, 4).map((notice: any, i: number) => (
             <motion.div
               key={notice.id}
-              initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
+              initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
+              transition={{ delay: i * 0.1, duration: 0.5 }}
+              whileHover={{ scale: 1.02 }}
               className="notice-card flex items-start gap-4"
             >
               <span className={notice.priority === "urgent" ? "priority-urgent" : notice.priority === "important" ? "priority-important" : "priority-normal"}>
@@ -155,9 +194,9 @@ const Index = () => {
             </motion.div>
           ))}
         </div>
-        <div className="text-center mt-8">
+        <motion.div {...fadeUp(0.3)} className="text-center mt-8">
           <Link to="/notices" className="btn-secondary text-sm">All Notices</Link>
-        </div>
+        </motion.div>
       </section>
     </div>
   );
