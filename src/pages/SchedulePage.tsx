@@ -18,17 +18,22 @@ const SchedulePage = () => {
         <p className="section-subtitle">Stay updated with all upcoming and past matches</p>
       </motion.div>
 
-      <div className="flex gap-2 mb-8 flex-wrap">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex gap-2 mb-8 flex-wrap"
+      >
         {["all", "upcoming", "completed", "cancelled"].map(s => (
           <button
             key={s}
             onClick={() => setFilter(s)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${filter === s ? "bg-primary text-primary-foreground scale-105" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {isLoading ? (
         <div className="flex justify-center py-12"><FiLoader className="w-6 h-6 animate-spin text-primary" /></div>
@@ -39,9 +44,11 @@ const SchedulePage = () => {
             return (
               <motion.div
                 key={match.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05, duration: 0.4 }}
+                whileHover={{ scale: 1.01, x: 4 }}
                 className="admin-card flex flex-col sm:flex-row sm:items-center gap-4"
               >
                 <div className="flex items-center gap-3 flex-shrink-0">

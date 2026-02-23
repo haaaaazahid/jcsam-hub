@@ -25,15 +25,20 @@ const ResultsPage = () => {
             return (
               <motion.div
                 key={result.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                whileHover={{ scale: 1.01 }}
                 className="admin-card"
               >
                 <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-xl bg-secondary/10 text-secondary">
+                  <motion.div
+                    whileHover={{ rotate: 10, scale: 1.1 }}
+                    className="p-3 rounded-xl bg-secondary/10 text-secondary"
+                  >
                     <FiAward className="w-6 h-6" />
-                  </div>
+                  </motion.div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xl">{sport?.icon}</span>

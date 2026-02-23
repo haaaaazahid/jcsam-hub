@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiMail, FiPhone, FiMapPin, FiCheckCircle } from "react-icons/fi";
 
+const fadeUp = (delay = 0) => ({ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.5 } });
+
 const ContactPage = () => {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -15,37 +17,36 @@ const ContactPage = () => {
 
   return (
     <div className="page-container py-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div {...fadeUp()}>
         <h1 className="section-title mb-2">Contact <span className="text-gradient">Us</span></h1>
         <p className="section-subtitle">Get in touch with JCSAM</p>
       </motion.div>
 
       <div className="grid md:grid-cols-2 gap-8 mt-8">
         <div className="space-y-6">
-          <div className="admin-card flex items-start gap-4">
+          <motion.div {...fadeUp(0.1)} className="admin-card flex items-start gap-4">
             <FiMapPin className="w-5 h-5 text-secondary flex-shrink-0 mt-1" />
             <div>
               <h3 className="font-semibold text-foreground mb-1">Address</h3>
               <p className="text-sm text-muted-foreground">C/o. The D.G. Ruparel College of Arts, Science and Commerce, Mahim, Mumbai – 400016</p>
             </div>
-          </div>
-          <div className="admin-card flex items-start gap-4">
+          </motion.div>
+          <motion.div {...fadeUp(0.2)} className="admin-card flex items-start gap-4">
             <FiMail className="w-5 h-5 text-secondary flex-shrink-0 mt-1" />
             <div>
               <h3 className="font-semibold text-foreground mb-1">Email</h3>
               <p className="text-sm text-muted-foreground">info@jcsam.org</p>
             </div>
-          </div>
-          <div className="admin-card flex items-start gap-4">
+          </motion.div>
+          <motion.div {...fadeUp(0.3)} className="admin-card flex items-start gap-4">
             <FiPhone className="w-5 h-5 text-secondary flex-shrink-0 mt-1" />
             <div>
               <h3 className="font-semibold text-foreground mb-1">Phone</h3>
               <p className="text-sm text-muted-foreground">+91 22 2444 0861</p>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Map */}
-          <div className="rounded-xl overflow-hidden h-64">
+          <motion.div {...fadeUp(0.4)} className="rounded-xl overflow-hidden h-64">
             <iframe
               title="JCSAM Location"
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.869!2d72.8402!3d19.0424!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c91eaa4ef507%3A0x7e4cb15c3fae6d33!2sD.G.%20Ruparel%20College!5e0!3m2!1sen!2sin!4v1234567890"
@@ -55,10 +56,10 @@ const ContactPage = () => {
               allowFullScreen
               loading="lazy"
             />
-          </div>
+          </motion.div>
         </div>
 
-        <div>
+        <motion.div {...fadeUp(0.2)}>
           {submitted && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 rounded-lg bg-success/10 border border-success text-success flex items-center gap-2">
               <FiCheckCircle /> Message sent successfully!
@@ -84,7 +85,7 @@ const ContactPage = () => {
             </div>
             <button type="submit" className="btn-secondary w-full">Send Message</button>
           </form>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
