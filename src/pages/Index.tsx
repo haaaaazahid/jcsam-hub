@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useDashboardStats, useSchedules } from "@/hooks/useSupabaseData";
+import { useDashboardStats, useSchedules, useNotices } from "@/hooks/useSupabaseData";
 import StatCounter from "@/components/StatCounter";
-import { FiCalendar, FiUsers, FiAward, FiArrowRight } from "react-icons/fi";
+import { FiCalendar, FiUsers, FiAward, FiArrowRight, FiBell } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
 
 const fadeUp = (delay = 0) => ({
@@ -15,26 +15,34 @@ const fadeUp = (delay = 0) => ({
 const Index = () => {
   const { data: stats } = useDashboardStats();
   const { data: allSchedules = [] } = useSchedules();
+  const { data: notices = [] } = useNotices();
   const sports = stats?.sports ?? [];
   const colleges = stats?.colleges ?? [];
   const players = stats?.players ?? [];
-  const notices = stats?.notices ?? [];
   const upcomingMatches = allSchedules.filter((s: any) => s.status === "upcoming").slice(0, 3);
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative min-h-[80vh] flex items-center gradient-hero overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+      {/* Hero Section with Parallax */}
+      <section className="relative min-h-[85vh] flex items-center gradient-hero overflow-hidden">
+        <div className="absolute inset-0">
           <motion.div
-            animate={{ scale: [1, 1.2, 1], x: [0, 20, 0] }}
+            animate={{ scale: [1, 1.2, 1], x: [0, 30, 0] }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-20 left-10 w-72 h-72 rounded-full bg-secondary blur-[100px]"
+            className="absolute top-20 left-10 w-72 h-72 rounded-full blur-[100px]"
+            style={{ background: "hsl(25 100% 50% / 0.15)" }}
           />
           <motion.div
             animate={{ scale: [1, 1.3, 1], y: [0, -30, 0] }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary blur-[120px]"
+            className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-[120px]"
+            style={{ background: "hsl(218 86% 31% / 0.2)" }}
+          />
+          <motion.div
+            animate={{ y: [0, -15, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full blur-[80px]"
+            style={{ background: "hsl(142 71% 45% / 0.1)" }}
           />
         </div>
         <div className="page-container relative z-10 w-full">
@@ -48,17 +56,18 @@ const Index = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-block px-4 py-1.5 rounded-full bg-secondary/20 text-secondary text-sm font-semibold mb-6"
+              className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-6"
+              style={{ background: "hsl(25 100% 50% / 0.2)", color: "hsl(25 100% 60%)" }}
             >
               🏆 Season 2025-26 Now Live
             </motion.div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-display font-black text-primary-foreground leading-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-black text-white leading-tight mb-6">
               Junior College<br />
               <motion.span
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-secondary"
+                style={{ color: "hsl(25 100% 55%)" }}
               >
                 Sports Association
               </motion.span><br />
@@ -68,7 +77,7 @@ const Index = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="text-lg text-primary-foreground/80 mb-8 max-w-xl"
+              className="text-lg text-white/70 mb-8 max-w-xl"
             >
               Empowering junior college athletes across Mumbai through competitive sports, teamwork, and excellence.
             </motion.p>
@@ -81,7 +90,7 @@ const Index = () => {
               <Link to="/sports" className="btn-secondary text-base flex items-center gap-2">
                 Explore Sports <FiArrowRight />
               </Link>
-              <Link to="/registration" className="btn-primary text-base !bg-primary-foreground/10 hover:!bg-primary-foreground/20 border border-primary-foreground/30">
+              <Link to="/registration" className="px-6 py-3 rounded-lg font-semibold text-base text-white border border-white/30 hover:bg-white/10 transition-all duration-300">
                 Register Now
               </Link>
             </motion.div>
@@ -106,7 +115,7 @@ const Index = () => {
           <p className="section-subtitle">Competitive disciplines across Mumbai's junior colleges</p>
         </motion.div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {sports.map((sport, i) => (
+          {sports.map((sport: any, i: number) => (
             <motion.div
               key={sport.id}
               initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -115,8 +124,8 @@ const Index = () => {
               transition={{ delay: i * 0.06, duration: 0.5 }}
               whileHover={{ y: -8, scale: 1.05 }}
             >
-              <Link to={`/sports/${(sport as any).slug}`} className="sport-card flex flex-col items-center p-5 text-center group">
-                <span className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{(sport as any).icon}</span>
+              <Link to={`/sports/${sport.slug}`} className="sport-card flex flex-col items-center p-5 text-center group">
+                <span className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">{sport.icon}</span>
                 <span className="text-sm font-semibold text-foreground">{sport.name}</span>
               </Link>
             </motion.div>
@@ -132,8 +141,8 @@ const Index = () => {
             <p className="section-subtitle">Don't miss the action</p>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-6">
-            {upcomingMatches.map((match, i) => {
-              const sport = (match as any).sports || sports.find((s: any) => s.id === (match as any).sport_id);
+            {upcomingMatches.map((match: any, i: number) => {
+              const sport = match.sports || sports.find((s: any) => s.id === match.sport_id);
               return (
                 <motion.div
                   key={match.id}
@@ -142,7 +151,7 @@ const Index = () => {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.15, duration: 0.5 }}
                   whileHover={{ y: -6, scale: 1.02 }}
-                  className="admin-card group"
+                  className="glass-card p-6 group"
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xl">{sport?.icon}</span>
@@ -162,9 +171,6 @@ const Index = () => {
               <p className="col-span-3 text-center text-muted-foreground py-8">No upcoming matches scheduled yet.</p>
             )}
           </div>
-          <motion.div {...fadeUp(0.3)} className="text-center mt-8">
-            <Link to="/schedule" className="btn-primary text-sm">View Full Schedule</Link>
-          </motion.div>
         </div>
       </section>
 

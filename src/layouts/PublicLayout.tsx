@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMenu, FiX, FiHome, FiInfo, FiCalendar, FiAward, FiBell, FiUsers, FiImage, FiFileText, FiMail, FiLogIn } from "react-icons/fi";
+import { FiMenu, FiX, FiHome, FiInfo, FiAward, FiBell, FiUsers, FiImage, FiFileText, FiMail, FiLogIn } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ScrollToTop from "@/components/ScrollToTop";
+import DarkModeToggle from "@/components/DarkModeToggle";
 
 const navItems = [
   { label: "Home", path: "/", icon: <FiHome /> },
   { label: "About", path: "/about", icon: <FiInfo /> },
   { label: "Sports", path: "/sports", icon: <MdSportsCricket /> },
-  { label: "Schedule", path: "/schedule", icon: <FiCalendar /> },
   { label: "Results", path: "/results", icon: <FiAward /> },
   { label: "Notices", path: "/notices", icon: <FiBell /> },
   { label: "Committee", path: "/committee", icon: <FiUsers /> },
@@ -33,7 +33,7 @@ const PublicLayout = () => {
               JC
             </div>
             <div>
-              <span className="font-display font-bold text-lg text-primary hidden sm:block">JCSAM</span>
+              <span className="font-display font-bold text-lg text-foreground hidden sm:block">JCSAM</span>
               <span className="text-[10px] text-muted-foreground hidden sm:block leading-tight">Junior College Sports</span>
             </div>
           </Link>
@@ -53,15 +53,19 @@ const PublicLayout = () => {
                 {item.label}
               </Link>
             ))}
-            <Link to="/admin/login" className="ml-2 btn-secondary text-sm !py-2 !px-4 flex items-center gap-2">
+            <DarkModeToggle />
+            <Link to="/admin/login" className="ml-1 btn-secondary text-sm !py-2 !px-4 flex items-center gap-2">
               <FiLogIn /> Admin
             </Link>
           </nav>
 
           {/* Mobile toggle */}
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 rounded-lg hover:bg-muted">
-            {mobileOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-2 lg:hidden">
+            <DarkModeToggle />
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-muted">
+              {mobileOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Nav */}
@@ -115,7 +119,7 @@ const PublicLayout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="gradient-hero text-primary-foreground mt-auto">
+      <footer className="gradient-hero text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
@@ -138,7 +142,7 @@ const PublicLayout = () => {
               </p>
             </div>
           </div>
-          <div className="border-t border-primary-foreground/20 mt-8 pt-6 text-center text-sm opacity-60">
+          <div className="border-t border-white/20 mt-8 pt-6 text-center text-sm opacity-60">
             © {new Date().getFullYear()} JCSAM. All rights reserved.
           </div>
         </div>
