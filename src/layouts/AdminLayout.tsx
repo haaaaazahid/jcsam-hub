@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import DarkModeToggle from "@/components/DarkModeToggle";
 import {
   FiHome, FiGrid, FiUsers, FiUserCheck, FiCalendar, FiAward,
   FiBell, FiImage, FiLogOut, FiMenu, FiChevronLeft, FiActivity, FiKey, FiX
@@ -61,7 +62,7 @@ const AdminLayout = () => {
           {!collapsed && (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg gradient-orange flex items-center justify-center">
-                <FiActivity className="w-4 h-4 text-secondary-foreground" />
+                <FiActivity className="w-4 h-4 text-white" />
               </div>
               <span className="font-display font-bold text-sidebar-foreground text-sm">JCSAM Admin</span>
             </div>
@@ -175,10 +176,11 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className={`flex-1 ${collapsed ? "ml-16" : "ml-64"} transition-all duration-300`}>
-        <header className="sticky top-0 z-30 h-14 bg-card/80 backdrop-blur-xl border-b border-border flex items-center px-6">
+        <header className="sticky top-0 z-30 h-14 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-6">
           <h1 className="font-display font-bold text-lg text-foreground">
             {sidebarItems.find(i => i.path === location.pathname)?.label || "Admin Panel"}
           </h1>
+          <DarkModeToggle />
         </header>
         <main className="p-6">
           <AnimatePresence mode="wait">
