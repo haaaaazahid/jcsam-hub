@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMenu, FiX, FiHome, FiInfo, FiAward, FiBell, FiUsers, FiImage, FiFileText, FiMail, FiLogIn } from "react-icons/fi";
+import { FiMenu, FiX, FiHome, FiInfo, FiAward, FiBell, FiUsers, FiImage, FiFileText, FiMail, FiLogIn, FiCalendar } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -12,6 +12,7 @@ const navItems = [
   { label: "About", path: "/about", icon: <FiInfo /> },
   { label: "Sports", path: "/sports", icon: <MdSportsCricket /> },
   { label: "Results", path: "/results", icon: <FiAward /> },
+  { label: "Schedule", path: "/schedule", icon: <FiCalendar /> },
   { label: "Notices", path: "/notices", icon: <FiBell /> },
   { label: "Committee", path: "/committee", icon: <FiUsers /> },
   { label: "Gallery", path: "/gallery", icon: <FiImage /> },

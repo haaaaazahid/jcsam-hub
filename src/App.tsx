@@ -15,6 +15,7 @@ import Sports from "./pages/Sports";
 import SportDetail from "./pages/SportDetail";
 import ResultsPage from "./pages/ResultsPage";
 import NoticesPage from "./pages/NoticesPage";
+import SchedulePage from "./pages/SchedulePage";
 import CommitteePage from "./pages/CommitteePage";
 import GalleryPage from "./pages/GalleryPage";
 import RegistrationPage from "./pages/RegistrationPage";
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/sports/:slug" element={<SportDetail />} />
                 <Route path="/results" element={<ResultsPage />} />
                 <Route path="/notices" element={<NoticesPage />} />
+                <Route path="/schedule" element={<SchedulePage />} />
                 <Route path="/committee" element={<CommitteePage />} />
                 <Route path="/gallery" element={<GalleryPage />} />
                 <Route path="/registration" element={<RegistrationPage />} />
