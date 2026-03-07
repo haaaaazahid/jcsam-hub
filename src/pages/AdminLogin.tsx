@@ -40,7 +40,7 @@ const AdminLogin = () => {
     setError("");
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: window.location.origin + "/admin/login",
     });
     setLoading(false);
     if (error) {
