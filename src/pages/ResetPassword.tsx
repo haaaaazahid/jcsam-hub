@@ -13,20 +13,50 @@ const ResetPassword = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [validSession, setValidSession] = useState(false);
+  const [checking, setChecking] = useState(true);
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for recovery session in hash
+    // Only allow this page for password recovery flows
     const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
+    const params = new URLSearchParams(hash.replace("#", ""));
+    const type = params.get("type");
+    
+    if (type === "recovery") {
       setValidSession(true);
-    } else {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) setValidSession(true);
-        else navigate("/admin/login");
-      });
+      setChecking(false);
+      return;
     }
+
+    // Check URL search params too (some flows use query params)
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("type") === "recovery") {
+      setValidSession(true);
+      setChecking(false);
+      return;
+    }
+
+    // Listen for PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setValidSession(true);
+        setChecking(false);
+      }
+    });
+
+    // If no recovery event after 3 seconds, redirect away
+    const timeout = setTimeout(() => {
+      setChecking(false);
+      if (!validSession) {
+        navigate("/admin/login");
+      }
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,13 +68,20 @@ const ResetPassword = () => {
     setLoading(false);
     if (ok) {
       setStatus("success");
-      setMessage("Password updated successfully! Redirecting...");
-      setTimeout(() => navigate("/admin"), 2000);
+      setMessage("Password updated successfully. You can now login with your new password.");
     } else {
       setStatus("error");
       setMessage("Failed to update password. The link may have expired.");
     }
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!validSession) return null;
 
@@ -61,9 +98,12 @@ const ResetPassword = () => {
           </div>
 
           {status === "success" ? (
-            <div className="text-center space-y-3">
-              <FiCheckCircle className="w-12 h-12 text-success mx-auto" />
-              <p className="text-sm text-muted-foreground">{message}</p>
+            <div className="text-center space-y-4">
+              <FiCheckCircle className="w-14 h-14 text-green-500 mx-auto" />
+              <p className="text-foreground font-semibold">{message}</p>
+              <button onClick={() => navigate("/admin/login")} className="btn-primary w-full text-sm mt-4">
+                Go to Login
+              </button>
             </div>
           ) : (
             <>
