@@ -17,8 +17,8 @@ const Index = () => {
   const { data: allSchedules = [] } = useSchedules();
   const { data: notices = [] } = useNotices();
   const sports = stats?.sports ?? [];
-  const colleges = stats?.colleges ?? [];
-  const players = stats?.players ?? [];
+  const colleges = (stats?.colleges ?? []).filter((c: any) => c.status === "active");
+  const players = (stats?.players ?? []).filter((p: any) => p.status === "active");
   const upcomingMatches = allSchedules.filter((s: any) => s.status === "upcoming").slice(0, 3);
 
   return (

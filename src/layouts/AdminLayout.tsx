@@ -7,12 +7,12 @@ import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import {
   FiHome, FiGrid, FiUsers, FiUserCheck, FiCalendar, FiAward,
-  FiBell, FiImage, FiLogOut, FiMenu, FiChevronLeft, FiActivity, FiKey, FiX
+  FiBell, FiImage, FiLogOut, FiMenu, FiChevronLeft, FiActivity, FiKey, FiX, FiClock
 } from "react-icons/fi";
 import { MdSportsCricket } from "react-icons/md";
-
 const sidebarItems = [
   { label: "Overview", path: "/admin", icon: <FiGrid /> },
+  { label: "Registrations", path: "/admin/registrations", icon: <FiClock /> },
   { label: "Sports", path: "/admin/sports", icon: <MdSportsCricket /> },
   { label: "Colleges", path: "/admin/colleges", icon: <FiHome /> },
   { label: "Players", path: "/admin/players", icon: <FiUserCheck /> },

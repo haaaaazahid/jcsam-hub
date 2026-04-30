@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGallery, useSports } from "@/hooks/useSupabaseData";
@@ -10,13 +9,11 @@ const GalleryPage = () => {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
-  // Group images by sport
-  const sportGroups = sports
-    .map((sport: any) => ({
-      ...sport,
-      images: gallery.filter((img: any) => img.sport_id === sport.id),
-    }))
-    .filter((g: any) => g.images.length > 0);
+  // Group images by sport — show ALL sports including empty ones
+  const sportGroups = sports.map((sport: any) => ({
+    ...sport,
+    images: gallery.filter((img: any) => img.sport_id === sport.id),
+  }));
 
   const currentImages = selectedSport
     ? gallery.filter((img: any) => img.sport_id === selectedSport)
@@ -46,27 +43,35 @@ const GalleryPage = () => {
             {selectedSportData?.icon} {selectedSportData?.name} Gallery
             <span className="text-sm font-normal text-muted-foreground ml-2">({currentImages.length} photos)</span>
           </h2>
-          <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
-            {currentImages.map((img: any, i: number) => (
-              <motion.div
-                key={img.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.04, duration: 0.4 }}
-                whileHover={{ scale: 1.03 }}
-                className="break-inside-avoid mb-4 cursor-pointer group"
-                onClick={() => setLightboxIdx(i)}
-              >
-                <div className="relative rounded-xl overflow-hidden">
-                  <img src={img.url} alt={img.caption} className="w-full rounded-xl group-hover:scale-110 transition-transform duration-700" loading="lazy" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                    <p className="text-white text-sm font-medium">{img.caption}</p>
+          {currentImages.length > 0 ? (
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
+              {currentImages.map((img: any, i: number) => (
+                <motion.div
+                  key={img.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.04, duration: 0.4 }}
+                  whileHover={{ scale: 1.03 }}
+                  className="break-inside-avoid mb-4 cursor-pointer group"
+                  onClick={() => setLightboxIdx(i)}
+                >
+                  <div className="relative rounded-xl overflow-hidden">
+                    <img src={img.url} alt={img.caption} className="w-full rounded-xl group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                      <p className="text-white text-sm font-medium">{img.caption}</p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <span className="text-8xl mb-4">{selectedSportData?.icon}</span>
+              <p className="text-lg font-medium">No photos yet</p>
+              <p className="text-sm">Photos will appear here once uploaded by the admin.</p>
+            </div>
+          )}
         </div>
       ) : (
         /* Sport folders view */
@@ -83,33 +88,37 @@ const GalleryPage = () => {
               className="cursor-pointer group"
             >
               <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-muted">
-                {/* Show first 4 images as a grid preview */}
-                <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
-                  {sport.images.slice(0, 4).map((img: any, j: number) => (
-                    <img
-                      key={img.id}
-                      src={img.url}
-                      alt={img.caption}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ))}
-                  {sport.images.length < 4 && Array.from({ length: 4 - Math.min(sport.images.length, 4) }).map((_, j) => (
-                    <div key={`placeholder-${j}`} className="bg-muted" />
-                  ))}
-                </div>
-                {/* Overlay */}
+                {sport.images.length > 0 ? (
+                  <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
+                    {sport.images.slice(0, 4).map((img: any) => (
+                      <img
+                        key={img.id}
+                        src={img.url}
+                        alt={img.caption}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ))}
+                    {sport.images.length < 4 && Array.from({ length: 4 - Math.min(sport.images.length, 4) }).map((_, j) => (
+                      <div key={`placeholder-${j}`} className="bg-muted" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <span className="text-6xl">{sport.icon}</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent flex items-end p-4 group-hover:from-primary/80 transition-all duration-500">
                   <div>
                     <p className="text-white text-lg font-bold">{sport.icon} {sport.name}</p>
-                    <p className="text-white/70 text-sm">{sport.images.length} photos</p>
+                    <p className="text-white/70 text-sm">{sport.images.length} {sport.images.length === 1 ? "photo" : "photos"}</p>
                   </div>
                 </div>
               </div>
             </motion.div>
           ))}
           {sportGroups.length === 0 && (
-            <p className="col-span-full text-center text-muted-foreground py-12">No gallery images uploaded yet.</p>
+            <p className="col-span-full text-center text-muted-foreground py-12">No sports found.</p>
           )}
         </div>
       )}

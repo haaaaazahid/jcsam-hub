@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
@@ -15,11 +15,16 @@ const AdminLogin = () => {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, resetPassword, isAuthenticated } = useAuth();
+  const { login, resetPassword, isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate("/admin");
+    }
+  }, [isAuthenticated, user, navigate]);
+
   if (isAuthenticated) {
-    navigate("/admin");
     return null;
   }
 
@@ -27,12 +32,12 @@ const AdminLogin = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const ok = await login(email, password);
+    const result = await login(email, password);
     setLoading(false);
-    if (ok) {
+    if (result.success) {
       navigate("/admin");
     } else {
-      setError("Invalid email or password. Please try again.");
+      setError(result.error || "Invalid email or password. Please try again.");
     }
   };
 
@@ -77,6 +82,7 @@ const AdminLogin = () => {
             </motion.div>
             <h1 className="text-2xl font-display font-bold text-foreground">Admin Login</h1>
             <p className="text-sm text-muted-foreground mt-1">JCSAM Management Portal</p>
+            <p className="text-xs text-muted-foreground mt-2 bg-muted/50 p-2 rounded border border-border inline-block">System temporarily unlocked for final admin setup.</p>
           </div>
 
           {tab === "login" ? (
@@ -126,7 +132,7 @@ const AdminLogin = () => {
                       onChange={e => setEmail(e.target.value)}
                       required
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="admin@jcsam.org"
+                      placeholder="juniorcollegesportsassociation@gmail.com"
                     />
                   </div>
                 </div>
@@ -154,6 +160,15 @@ const AdminLogin = () => {
               >
                 Forgot Password?
               </button>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Need a final admin account?{" "}
+                  <Link to="/admin/signup" className="text-primary hover:underline font-medium">
+                    Sign Up
+                  </Link>
+                </p>
+              </div>
             </>
           ) : (
             <>
@@ -188,7 +203,7 @@ const AdminLogin = () => {
                           onChange={e => setForgotEmail(e.target.value)}
                           required
                           className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="admin@jcsam.org"
+                          placeholder="juniorcollegesportsassociation@gmail.com"
                         />
                       </div>
                     </div>

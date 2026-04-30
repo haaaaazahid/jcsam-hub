@@ -26,11 +26,14 @@ const ManagePlayers = () => {
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
 
+  // Only show approved players
+  const approvedPlayers = players.filter((p: any) => p.status === "approved");
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
         <button
-          onClick={() => downloadCSV(players, colleges, sports, "players.csv")}
+          onClick={() => downloadCSV(approvedPlayers, colleges, sports, "players.csv")}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-colors"
         >
           <FiDownload className="w-4 h-4" /> Export CSV
@@ -38,29 +41,30 @@ const ManagePlayers = () => {
       </div>
       <CrudTable
         title="Manage Players"
-        data={players}
+        data={approvedPlayers}
         loading={isLoading}
         searchKey="name"
         columns={[
           { key: "name", label: "Name" },
-          { key: "college_id", label: "College", render: (p) => (p as any).colleges?.name || colleges.find((c: any) => c.id === p.college_id)?.name || "" },
-          { key: "sport_id", label: "Sport", render: (p) => (p as any).sports?.name || sports.find((s: any) => s.id === p.sport_id)?.name || "" },
+          { key: "college_id", label: "College", render: (p: any) => (p as any).colleges?.name || colleges.find((c: any) => c.id === p.college_id)?.name || "" },
+          { key: "sport_id", label: "Sport", render: (p: any) => (p as any).sports?.name || sports.find((s: any) => s.id === p.sport_id)?.name || "" },
           { key: "age", label: "Age" },
           { key: "contact", label: "Contact", render: (p) => p.contact ? `+91 ${String(p.contact).replace(/^\+91\s?/, "")}` : "" },
-          { key: "status", label: "Status", render: (p) => (
-            <span className={`px-2 py-0.5 rounded text-xs font-bold ${p.status === "approved" ? "bg-success/10 text-success" : p.status === "pending" ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"}`}>{p.status}</span>
-          )},
+          {
+            key: "status", label: "Status", render: (p) => (
+              <span className="px-2 py-0.5 rounded text-xs font-bold bg-success/10 text-success">approved</span>
+            )
+          },
         ]}
         fields={[
           { key: "name", label: "Player Name", type: "text", required: true },
-          { key: "college_id", label: "College", type: "select", options: colleges.map((c: any) => ({ value: c.id, label: c.name })), required: true },
+          { key: "college_id", label: "College", type: "select", options: colleges.filter((c: any) => c.status === "active").map((c: any) => ({ value: c.id, label: c.name })), required: true },
           { key: "sport_id", label: "Sport", type: "select", options: sports.map((s: any) => ({ value: s.id, label: s.name })), required: true },
           { key: "age", label: "Age", type: "number", required: true },
           { key: "contact", label: "Contact (10 digits)", type: "text", required: true },
-          { key: "status", label: "Status", type: "select", options: [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }], required: true },
         ]}
-        onAdd={(item) => createPlayer.mutate(item as any)}
-        onEdit={(item) => updatePlayer.mutate(item as any)}
+        onAdd={(item) => createPlayer.mutate({ ...item, status: "approved" } as any)}
+        onEdit={(item) => updatePlayer.mutate({ ...item, status: "approved" } as any)}
         onDelete={(id) => deletePlayer.mutate(id)}
       />
     </div>

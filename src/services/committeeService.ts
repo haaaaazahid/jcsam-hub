@@ -1,25 +1,30 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 export const committeeService = {
   async getAll() {
-    const { data, error } = await supabase.from("committee_members").select("*").order("display_order");
+
+    const { data, error } = await supabaseAdmin
+      .from("committee_members")
+      .select("*")
+      .order("display_order");
     if (error) throw error;
     return data ?? [];
   },
 
   async create(item: any) {
-    const { error } = await supabase.from("committee_members").insert(item);
-    if (error) throw error;
+    const { id, created_at, updated_at, ...payload } = item;
+    const { error } = await supabaseAdmin.from("committee_members").insert(payload);
+    if (error) throw new Error(error.message);
   },
 
   async update(item: any) {
     const { id, created_at, updated_at, ...rest } = item;
-    const { error } = await supabase.from("committee_members").update(rest).eq("id", id);
-    if (error) throw error;
+    const { error } = await supabaseAdmin.from("committee_members").update(rest).eq("id", id);
+    if (error) throw new Error(error.message);
   },
 
   async remove(id: string) {
-    const { error } = await supabase.from("committee_members").delete().eq("id", id);
-    if (error) throw error;
+    const { error } = await supabaseAdmin.from("committee_members").delete().eq("id", id);
+    if (error) throw new Error(error.message);
   },
 };

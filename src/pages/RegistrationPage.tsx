@@ -16,10 +16,13 @@ const RegistrationPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tab === "player") {
-      // Validate 10-digit phone
       const phone = form.contact?.replace(/\D/g, "");
       if (!phone || phone.length !== 10) {
         toast.error("Please enter a valid 10-digit phone number");
+        return;
+      }
+      if (/^0{10}$/.test(phone)) {
+        toast.error("Phone number cannot be all zeros");
         return;
       }
       createPlayer.mutate({
@@ -29,11 +32,30 @@ const RegistrationPage = () => {
         age: Number(form.age),
         contact: phone,
         status: "pending",
-      } as any);
+      } as any, {
+        onSuccess: () => {
+          toast.success("Registration successful! Awaiting admin approval.");
+          setSubmitted(true);
+          setForm({});
+          setTimeout(() => setSubmitted(false), 5000);
+        },
+        onError: (error: any) => {
+          toast.error(error?.message || "Registration failed. Please try again.");
+        },
+      });
     } else {
       const phone = form.phone?.replace(/\D/g, "");
       if (!phone || phone.length !== 10) {
         toast.error("Please enter a valid 10-digit phone number");
+        return;
+      }
+      if (/^0{10}$/.test(phone)) {
+        toast.error("Phone number cannot be all zeros");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email || "")) {
+        toast.error("Please enter a valid email address");
         return;
       }
       createCollege.mutate({
@@ -42,13 +64,22 @@ const RegistrationPage = () => {
         contact_person: form.contactPerson,
         email: form.email,
         phone: phone,
-        status: "active",
-      } as any);
+        status: "pending",
+      } as any, {
+        onSuccess: () => {
+          toast.success("Registration successful! Awaiting admin approval.");
+          setSubmitted(true);
+          setForm({});
+          setTimeout(() => setSubmitted(false), 5000);
+        },
+        onError: (error: any) => {
+          toast.error(error?.message || "Registration failed. Please try again.");
+        },
+      });
     }
-    setSubmitted(true);
-    setForm({});
-    setTimeout(() => setSubmitted(false), 3000);
   };
+
+  const isSubmitting = createPlayer.isPending || createCollege.isPending;
 
   return (
     <div className="page-container py-12">
@@ -137,7 +168,9 @@ const RegistrationPage = () => {
               </div>
             </>
           )}
-          <button type="submit" className="btn-secondary w-full mt-4">Submit Registration</button>
+          <button type="submit" disabled={isSubmitting} className="btn-secondary w-full mt-4 disabled:opacity-70 disabled:cursor-not-allowed">
+            {isSubmitting ? "Submitting..." : "Submit Registration"}
+          </button>
         </form>
       </motion.div>
     </div>

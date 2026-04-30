@@ -1,16 +1,17 @@
 
 import { motion } from "framer-motion";
-import { useDashboardStats } from "@/hooks/useSupabaseData";
+import { useDashboardStats, usePlayers } from "@/hooks/useSupabaseData";
 import StatCounter from "@/components/StatCounter";
-import { FiUsers, FiCalendar, FiBell, FiUserCheck, FiLoader } from "react-icons/fi";
+import { FiUsers, FiCalendar, FiBell, FiUserCheck, FiLoader, FiClock } from "react-icons/fi";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const COLORS = ["hsl(216,85%,30%)", "hsl(27,100%,50%)", "hsl(142,71%,45%)", "hsl(38,92%,50%)", "hsl(0,84%,60%)"];
 
 const AdminDashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
+  const { data: allPlayers = [], isLoading: playersLoading } = usePlayers();
 
-  if (isLoading) {
+  if (isLoading || playersLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <FiLoader className="w-8 h-8 animate-spin text-primary" />
@@ -36,6 +37,9 @@ const AdminDashboard = () => {
     { name: "Completed", value: schedules.filter((s: any) => s.status === "completed").length },
     { name: "Cancelled", value: schedules.filter((s: any) => s.status === "cancelled").length },
   ].filter(d => d.value > 0);
+
+  const pendingColleges = colleges.filter((c: any) => c.status === "pending");
+  const pendingPlayers = allPlayers.filter((p: any) => p.status === "pending");
 
   return (
     <div className="space-y-6">
@@ -108,6 +112,69 @@ const AdminDashboard = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Pending Registrations */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="admin-card">
+          <div className="flex items-center gap-2 mb-4">
+            <FiClock className="text-primary w-5 h-5" />
+            <h3 className="font-display font-bold text-lg">Pending Colleges</h3>
+          </div>
+          {pendingColleges.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-4 py-2 text-muted-foreground">College Name</th>
+                    <th className="text-left px-4 py-2 text-muted-foreground">Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingColleges.map((c: any) => (
+                    <tr key={c.id} className="border-b border-border/50">
+                      <td className="px-4 py-3">{c.name}</td>
+                      <td className="px-4 py-3">{c.email || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">No pending college registrations.</p>
+          )}
+        </div>
+
+        <div className="admin-card">
+          <div className="flex items-center gap-2 mb-4">
+            <FiClock className="text-primary w-5 h-5" />
+            <h3 className="font-display font-bold text-lg">Pending Players</h3>
+          </div>
+          {pendingPlayers.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-4 py-2 text-muted-foreground">Player Name</th>
+                    <th className="text-left px-4 py-2 text-muted-foreground">Email</th>
+                    <th className="text-left px-4 py-2 text-muted-foreground">College</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingPlayers.map((p: any) => (
+                    <tr key={p.id} className="border-b border-border/50">
+                      <td className="px-4 py-3">{p.name}</td>
+                      <td className="px-4 py-3">{p.email || "-"}</td>
+                      <td className="px-4 py-3">{p.colleges?.name || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">No pending player registrations.</p>
+          )}
         </div>
       </div>
     </div>

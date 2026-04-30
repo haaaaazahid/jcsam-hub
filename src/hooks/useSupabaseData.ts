@@ -79,7 +79,8 @@ export function useCreateCollege() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (col: any) => collegeService.create(col),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["colleges"] }); toast.success("College added!"); },
+    // No generic toast here – RegistrationPage handles its own success feedback
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["colleges"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 }
@@ -111,7 +112,8 @@ export function useCreatePlayer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (p: any) => playerService.create(p),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["players"] }); toast.success("Player added!"); },
+    // No generic toast here – RegistrationPage handles its own success feedback
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["players"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 }

@@ -62,7 +62,9 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) { setMessage("Passwords do not match."); setStatus("error"); return; }
-    if (password.length < 6) { setMessage("Password must be at least 6 characters."); setStatus("error"); return; }
+    if (password.length < 8) { setMessage("Password must be at least 8 characters."); setStatus("error"); return; }
+    if (!/[0-9]/.test(password)) { setMessage("Password must contain at least one number."); setStatus("error"); return; }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { setMessage("Password must contain at least one special character."); setStatus("error"); return; }
     setLoading(true);
     const ok = await updatePassword(password);
     setLoading(false);
@@ -122,9 +124,9 @@ const ResetPassword = () => {
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Min 6 characters"
+                      placeholder="Min 8 chars, 1 number, 1 symbol"
                     />
                   </div>
                 </div>

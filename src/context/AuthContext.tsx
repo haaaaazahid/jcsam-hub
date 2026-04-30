@@ -8,7 +8,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (newPassword: string) => Promise<boolean>;
@@ -45,9 +46,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return !error;
+    return { success: !error, error: error?.message };
+  }, []);
+
+  const signup = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      // optional: add options here if email confirmation is required eventually
+    });
+    return { success: !error, error: error?.message };
   }, []);
 
   const logout = useCallback(async () => {
@@ -73,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session,
       loading,
       login,
+      signup,
       logout,
       resetPassword,
       updatePassword,

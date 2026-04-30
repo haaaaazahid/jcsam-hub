@@ -21,6 +21,7 @@ import GalleryPage from "./pages/GalleryPage";
 import RegistrationPage from "./pages/RegistrationPage";
 import ContactPage from "./pages/ContactPage";
 import AdminLogin from "./pages/AdminLogin";
+import AdminSignup from "./pages/AdminSignup";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ManageSports from "./pages/admin/ManageSports";
@@ -31,6 +32,7 @@ import ManageResults from "./pages/admin/ManageResults";
 import ManageNotices from "./pages/admin/ManageNotices";
 import ManageCommittee from "./pages/admin/ManageCommittee";
 import ManageGallery from "./pages/admin/ManageGallery";
+import Registrations from "./pages/admin/Registrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -49,7 +51,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               {/* Public */}
               <Route element={<PublicLayout />}>
@@ -65,12 +67,14 @@ const App = () => (
                 <Route path="/registration" element={<RegistrationPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/signup" element={<AdminSignup />} />
                 <Route path="/admin/reset-password" element={<ResetPassword />} />
               </Route>
 
               {/* Admin */}
               <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/registrations" element={<Registrations />} />
                 <Route path="/admin/sports" element={<ManageSports />} />
                 <Route path="/admin/colleges" element={<ManageColleges />} />
                 <Route path="/admin/players" element={<ManagePlayers />} />

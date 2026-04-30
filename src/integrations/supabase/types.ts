@@ -204,6 +204,7 @@ export type Database = {
           college_id: string | null
           contact: string
           created_at: string
+          email: string | null
           id: string
           id_document: string
           name: string
@@ -216,6 +217,7 @@ export type Database = {
           college_id?: string | null
           contact?: string
           created_at?: string
+          email?: string | null
           id?: string
           id_document?: string
           name: string
@@ -228,6 +230,7 @@ export type Database = {
           college_id?: string | null
           contact?: string
           created_at?: string
+          email?: string | null
           id?: string
           id_document?: string
           name?: string
