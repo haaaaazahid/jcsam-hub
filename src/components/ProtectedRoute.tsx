@@ -7,7 +7,7 @@ const ADMIN_EMAIL = "juniorcollegesportsassociation@gmail.com";
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading, user } = useAuth();
 
-  // ⏳ Loading state
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -16,18 +16,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // ❌ Not logged in
+  // Not logged in
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // ❌ Logged in but NOT admin
-  if (user && user.email !== ADMIN_EMAIL) {
+  // 🚨 IMPORTANT FIX: check user safely
+  if (!user || !user.email) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  // Wrong email
+  if (user.email !== ADMIN_EMAIL) {
     alert("Access denied: Only admin allowed");
     return <Navigate to="/" replace />;
   }
 
-  // ✅ Admin access
+  // Correct admin
   return <>{children}</>;
 };
 
