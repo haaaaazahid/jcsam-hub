@@ -77,14 +77,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return !error;
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    return await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: "/https://jcsam-hub.vercel.app//login",
-      },
-    });
-  }, []);
+const signInWithGoogle = useCallback(async () => {
+  return await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin + "/admin",    },
+  });
+}, []);
 
   return (
     <AuthContext.Provider value={{
