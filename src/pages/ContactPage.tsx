@@ -35,7 +35,7 @@ const ContactPage = () => {
             <FiMail className="w-5 h-5 text-secondary flex-shrink-0 mt-1" />
             <div>
               <h3 className="font-semibold text-foreground mb-1">Email</h3>
-              <p className="text-sm text-muted-foreground">info@jcsam.org</p>
+              <p className="text-sm text-muted-foreground">juniorcollegesportsassociation@gmail.com</p>
             </div>
           </motion.div>
           <motion.div {...fadeUp(0.3)} className="admin-card flex items-start gap-4">

@@ -11,6 +11,9 @@ import { committeeService } from "@/services/committeeService";
 import { galleryService } from "@/services/galleryService";
 import { dashboardService } from "@/services/dashboardService";
 
+import { sportsData } from "@/data/sportsData";
+import { collegesData } from "@/data/dummyData";
+
 // ============ SPORTS ============
 export function useSports() {
   return useQuery({ queryKey: ["sports"], queryFn: () => sportService.getAll() });

@@ -13,6 +13,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (newPassword: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<{ error?: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -76,6 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return !error;
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    return await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "/https://jcsam-hub.vercel.app//login",
+      },
+    });
+  }, []);
+
   return (
     <AuthContext.Provider value={{
       isAuthenticated: !!user,
@@ -87,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       resetPassword,
       updatePassword,
+      signInWithGoogle,
     }}>
       {children}
     </AuthContext.Provider>

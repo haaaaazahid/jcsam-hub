@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
-import { lovable } from "@/integrations/lovable/index";
 import { FiLock, FiMail, FiAlertCircle, FiCheckCircle, FiArrowLeft } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -15,7 +14,7 @@ const AdminLogin = () => {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, resetPassword, isAuthenticated, user, logout } = useAuth();
+  const { login, resetPassword, isAuthenticated, user, logout, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,9 +43,7 @@ const AdminLogin = () => {
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/admin/login",
-    });
+    const { error } = await signInWithGoogle();
     setLoading(false);
     if (error) {
       setError("Google sign-in failed. Please try again.");
