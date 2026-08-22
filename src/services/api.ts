@@ -1,8 +1,9 @@
 // ============================================================
-// JCSAM HUB - GOOGLE SHEETS API CLIENT
+// JCSAM HUB - GOOGLE APPS SCRIPT API CLIENT
 // ============================================================
 
 const API_URL =
+  import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL ||
   "https://script.google.com/macros/s/AKfycbw50MXjtqkQUbvRTCnAMEMickN6jKC6N1JytJdO8wfL0VXCthmkMtL9mPE6GjSqEHg/exec";
 
 // ============================================================
@@ -11,226 +12,619 @@ const API_URL =
 
 export interface ApiResponse<T = any> {
   success: boolean;
-  sheet?: string;
   data?: T;
   message?: string;
   error?: string;
   token?: string;
   admin?: any;
+  [key: string]: any;
 }
 
 // ============================================================
-// GET PUBLIC SHEET
+// SESSION
 // ============================================================
 
-export async function getSheet<T = any>(
-  sheet: string
-): Promise<T[]> {
-  const url =
-    `${API_URL}?action=get&sheet=${encodeURIComponent(sheet)}`;
+const TOKEN_KEY = "jcsam_admin_token";
+const ADMIN_KEY = "jcsam_admin";
 
-  const response = await fetch(url);
+export function getAdminToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
 
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status}`
-    );
+export function getAdmin(): any | null {
+  try {
+    const value = localStorage.getItem(ADMIN_KEY);
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
   }
+}
 
-  const result: ApiResponse<T[]> =
-    await response.json();
+export function setAdminSession(
+  token: string,
+  admin: any
+): void {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(
+    ADMIN_KEY,
+    JSON.stringify(admin || {})
+  );
+}
 
-  if (!result.success) {
-    throw new Error(
-      result.error || "Failed to fetch data"
-    );
-  }
-
-  return result.data || [];
+export function clearAdminSession(): void {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(ADMIN_KEY);
 }
 
 // ============================================================
-// ADMIN GET
+// NORMALIZATION
 // ============================================================
 
-export async function adminGet<T = any>(
-  sheet: string,
-  token: string
-): Promise<T[]> {
-  const url =
-    `${API_URL}?action=adminGet` +
-    `&sheet=${encodeURIComponent(sheet)}` +
-    `&token=${encodeURIComponent(token)}`;
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status}`
-    );
-  }
-
-  const result: ApiResponse<T[]> =
-    await response.json();
-
-  if (!result.success) {
-    throw new Error(
-      result.error || "Failed to fetch data"
-    );
-  }
-
-  return result.data || [];
+function normalizeDate(value: any): any {
+  return value;
 }
 
-// ============================================================
-// POST REQUEST
-// ============================================================
+export function normalizeRecord<
+  T extends Record<string, any>
+>(record: T): T {
+  if (!record || typeof record !== "object") {
+    return record;
+  }
 
-export async function postApi<T = any>(
-  body: Record<string, any>
-): Promise<ApiResponse<T>> {
+  const result: any = { ...record };
 
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-    body: JSON.stringify(body),
-  });
+  // ----------------------------------------------------------
+  // ID aliases
+  // ----------------------------------------------------------
 
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status}`
+  if (
+    result.collegeId === undefined &&
+    result.college_id !== undefined
+  ) {
+    result.collegeId = result.college_id;
+  }
+
+  if (
+    result.college_id === undefined &&
+    result.collegeId !== undefined
+  ) {
+    result.college_id = result.collegeId;
+  }
+
+  if (
+    result.sportId === undefined &&
+    result.sport_id !== undefined
+  ) {
+    result.sportId = result.sport_id;
+  }
+
+  if (
+    result.sport_id === undefined &&
+    result.sportId !== undefined
+  ) {
+    result.sport_id = result.sportId;
+  }
+
+  if (
+    result.playerId === undefined &&
+    result.player_id !== undefined
+  ) {
+    result.playerId = result.player_id;
+  }
+
+  if (
+    result.player_id === undefined &&
+    result.playerId !== undefined
+  ) {
+    result.player_id = result.playerId;
+  }
+
+  if (
+    result.scheduleId === undefined &&
+    result.schedule_id !== undefined
+  ) {
+    result.scheduleId = result.schedule_id;
+  }
+
+  if (
+    result.schedule_id === undefined &&
+    result.scheduleId !== undefined
+  ) {
+    result.schedule_id = result.scheduleId;
+  }
+
+  if (
+    result.resultId === undefined &&
+    result.result_id !== undefined
+  ) {
+    result.resultId = result.result_id;
+  }
+
+  if (
+    result.result_id === undefined &&
+    result.resultId !== undefined
+  ) {
+    result.result_id = result.resultId;
+  }
+
+  // ----------------------------------------------------------
+  // Contact aliases
+  // ----------------------------------------------------------
+
+  if (
+    result.contactPerson === undefined &&
+    result.contact_person !== undefined
+  ) {
+    result.contactPerson = result.contact_person;
+  }
+
+  if (
+    result.contact_person === undefined &&
+    result.contactPerson !== undefined
+  ) {
+    result.contact_person = result.contactPerson;
+  }
+
+  // ----------------------------------------------------------
+  // Image aliases
+  // ----------------------------------------------------------
+
+  if (
+    result.photoUrl === undefined &&
+    result.photo_url !== undefined
+  ) {
+    result.photoUrl = result.photo_url;
+  }
+
+  if (
+    result.photo_url === undefined &&
+    result.photoUrl !== undefined
+  ) {
+    result.photo_url = result.photoUrl;
+  }
+
+  if (
+    result.logoUrl === undefined &&
+    result.logo_url !== undefined
+  ) {
+    result.logoUrl = result.logo_url;
+  }
+
+  if (
+    result.logo_url === undefined &&
+    result.logoUrl !== undefined
+  ) {
+    result.logo_url = result.logoUrl;
+  }
+
+  if (
+    result.imageUrl === undefined &&
+    result.image_url !== undefined
+  ) {
+    result.imageUrl = result.image_url;
+  }
+
+  if (
+    result.image_url === undefined &&
+    result.imageUrl !== undefined
+  ) {
+    result.image_url = result.imageUrl;
+  }
+
+  // ----------------------------------------------------------
+  // Date aliases
+  // ----------------------------------------------------------
+
+  if (
+    result.createdAt === undefined &&
+    result.created_at !== undefined
+  ) {
+    result.createdAt = normalizeDate(
+      result.created_at
     );
   }
 
-  const result: ApiResponse<T> =
-    await response.json();
+  if (
+    result.created_at === undefined &&
+    result.createdAt !== undefined
+  ) {
+    result.created_at = normalizeDate(
+      result.createdAt
+    );
+  }
 
-  if (!result.success) {
-    throw new Error(
-      result.error || "API request failed"
+  if (
+    result.updatedAt === undefined &&
+    result.updated_at !== undefined
+  ) {
+    result.updatedAt = normalizeDate(
+      result.updated_at
+    );
+  }
+
+  if (
+    result.updated_at === undefined &&
+    result.updatedAt !== undefined
+  ) {
+    result.updated_at = normalizeDate(
+      result.updatedAt
     );
   }
 
   return result;
 }
 
+export function normalizeRecords<
+  T extends Record<string, any>
+>(records: T[]): T[] {
+  if (!Array.isArray(records)) {
+    return [];
+  }
+
+  return records.map(normalizeRecord);
+}
+
 // ============================================================
-// CREATE
+// RESPONSE PARSER
 // ============================================================
 
-export async function createRecord<T = any>(
-  sheet: string,
-  data: Record<string, any>,
-  token: string
-): Promise<T> {
+async function parseResponse(
+  response: Response
+): Promise<ApiResponse> {
+  const text = await response.text();
+
+  let json: ApiResponse;
+
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `Invalid API response (${response.status}): ${text.slice(
+        0,
+        300
+      )}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      json.error ||
+        json.message ||
+        `API request failed with status ${response.status}`
+    );
+  }
+
+  if (json.success === false) {
+    throw new Error(
+      json.error ||
+        json.message ||
+        "API request failed"
+    );
+  }
+
+  return json;
+}
+
+// ============================================================
+// GET
+// ============================================================
+
+export async function apiGet<T = any>(
+  action: string,
+  params: Record<
+    string,
+    string | number | boolean | undefined
+  > = {}
+): Promise<ApiResponse<T>> {
+  const url = new URL(API_URL);
+
+  url.searchParams.set("action", action);
+
+  Object.entries(params).forEach(
+    ([key, value]) => {
+      if (
+        value !== undefined &&
+        value !== null
+      ) {
+        url.searchParams.set(
+          key,
+          String(value)
+        );
+      }
+    }
+  );
+
+  const response = await fetch(
+    url.toString(),
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+
+  return parseResponse(
+    response
+  ) as Promise<ApiResponse<T>>;
+}
+
+// ============================================================
+// POST
+// ============================================================
+
+export async function apiPost<T = any>(
+  action: string,
+  body: Record<string, any> = {}
+): Promise<ApiResponse<T>> {
+  const response = await fetch(
+    API_URL,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        action,
+        ...body,
+      }),
+    }
+  );
+
+  return parseResponse(
+    response
+  ) as Promise<ApiResponse<T>>;
+}
+
+// ============================================================
+// TEST
+// ============================================================
+
+export async function testConnection() {
+  return apiGet("test");
+}
+
+// ============================================================
+// SHEETS
+// ============================================================
+
+export async function getSheet<T = any>(
+  sheet: string
+): Promise<T[]> {
+  const result =
+    await apiGet<T[]>(
+      "get",
+      { sheet }
+    );
+
+  return normalizeRecords(
+    Array.isArray(result.data)
+      ? result.data
+      : []
+  );
+}
+
+export async function adminGet<T = any>(
+  sheet: string
+): Promise<T[]> {
+  const token =
+    getAdminToken();
+
+  if (!token) {
+    throw new Error(
+      "Admin session expired. Please login again."
+    );
+  }
 
   const result =
-    await postApi<T>({
-      action: "create",
-      sheet,
-      data,
-      token,
-    });
+    await apiGet<T[]>(
+      "adminGet",
+      {
+        sheet,
+        token,
+      }
+    );
 
-  return result.data as T;
+  return normalizeRecords(
+    Array.isArray(result.data)
+      ? result.data
+      : []
+  );
 }
 
 // ============================================================
-// UPDATE
+// CRUD
 // ============================================================
 
-export async function updateRecord(
+export async function createRecord<
+  T = any
+>(
+  sheet: string,
+  data: Record<string, any>
+): Promise<T> {
+  const token =
+    getAdminToken();
+
+  if (!token) {
+    throw new Error(
+      "Admin session expired. Please login again."
+    );
+  }
+
+  const result =
+    await apiPost<T>(
+      "create",
+      {
+        token,
+        sheet,
+        data,
+      }
+    );
+
+  return normalizeRecord(
+    result.data || data
+  );
+}
+
+export async function updateRecord<
+  T = any
+>(
   sheet: string,
   id: string,
-  data: Record<string, any>,
-  token: string
-): Promise<void> {
+  data: Record<string, any>
+): Promise<T> {
+  const token =
+    getAdminToken();
 
-  await postApi({
-    action: "update",
-    sheet,
-    id,
-    data,
-    token,
-  });
+  if (!token) {
+    throw new Error(
+      "Admin session expired. Please login again."
+    );
+  }
+
+  const result =
+    await apiPost<T>(
+      "update",
+      {
+        token,
+        sheet,
+        id,
+        data,
+      }
+    );
+
+  return normalizeRecord(
+    result.data || {
+      id,
+      ...data,
+    }
+  );
 }
-
-// ============================================================
-// DELETE
-// ============================================================
 
 export async function deleteRecord(
   sheet: string,
-  id: string,
-  token: string
-): Promise<void> {
+  id: string
+): Promise<ApiResponse> {
+  const token =
+    getAdminToken();
 
-  await postApi({
-    action: "delete",
-    sheet,
-    id,
-    token,
-  });
+  if (!token) {
+    throw new Error(
+      "Admin session expired. Please login again."
+    );
+  }
+
+  return apiPost(
+    "delete",
+    {
+      token,
+      sheet,
+      id,
+    }
+  );
 }
 
 // ============================================================
-// PLAYER REGISTRATION
+// REGISTRATION
 // ============================================================
 
 export async function registerPlayer(
   data: Record<string, any>
 ) {
-  return postApi({
-    action: "registerPlayer",
-    data,
-  });
-}
+  const result =
+    await apiPost(
+      "registerPlayer",
+      {
+        data: {
+          ...data,
 
-// ============================================================
-// COLLEGE REGISTRATION
-// ============================================================
+          college_id:
+            data.college_id ??
+            data.collegeId ??
+            data.college ??
+            "",
+
+          sport_id:
+            data.sport_id ??
+            data.sportId ??
+            data.sport ??
+            "",
+        },
+      }
+    );
+
+  return result.data || result;
+}
 
 export async function registerCollege(
   data: Record<string, any>
 ) {
-  return postApi({
-    action: "registerCollege",
-    data,
-  });
+  const result =
+    await apiPost(
+      "registerCollege",
+      {
+        data: {
+          ...data,
+
+          contact_person:
+            data.contact_person ??
+            data.contactPerson ??
+            "",
+        },
+      }
+    );
+
+  return result.data || result;
 }
 
 // ============================================================
-// ADMIN LOGIN
+// AUTH
 // ============================================================
 
-export async function loginAdmin(
+export async function login(
   email: string,
   password: string
 ) {
+  const result =
+    await apiPost(
+      "login",
+      {
+        email,
+        password,
+      }
+    );
 
-  return postApi({
-    action: "login",
-    email,
-    password,
-  });
+  if (!result.token) {
+    throw new Error(
+      result.error ||
+        "Login failed. No session token received."
+    );
+  }
 
+  setAdminSession(
+    result.token,
+    result.admin || {}
+  );
+
+  return {
+    token: result.token,
+    admin: result.admin || {},
+  };
 }
 
-// ============================================================
-// ADMIN LOGOUT
-// ============================================================
+export async function logout() {
+  const token =
+    getAdminToken();
 
-export async function logoutAdmin(
-  token: string
-) {
-
-  return postApi({
-    action: "logout",
-    token,
-  });
-
+  try {
+    if (token) {
+      await apiPost(
+        "logout",
+        { token }
+      );
+    }
+  } finally {
+    clearAdminSession();
+  }
 }
 
 // ============================================================
@@ -238,56 +632,99 @@ export async function logoutAdmin(
 // ============================================================
 
 export async function uploadImage(
-  base64: string,
-  fileName: string,
-  mimeType: string,
-  bucket: string,
-  token: string
+  file: File,
+  bucket = "general"
 ) {
+  const token =
+    getAdminToken();
 
-  return postApi({
-    action: "uploadImage",
-    data: base64,
-    fileName,
-    mimeType,
-    bucket,
-    token,
-  });
-
-}
-
-// ============================================================
-// CONNECTION TEST
-// ============================================================
-
-export async function testApi() {
-
-  const response =
-    await fetch(
-      `${API_URL}?action=test`
+  if (!token) {
+    throw new Error(
+      "Admin session expired. Please login again."
     );
+  }
 
-  return response.json();
+  const base64 =
+    await fileToBase64(file);
 
+  return apiPost(
+    "uploadImage",
+    {
+      token,
+      data: base64,
+      fileName: file.name,
+      mimeType:
+        file.type || "image/jpeg",
+      bucket,
+    }
+  );
+}
+
+function fileToBase64(
+  file: File
+): Promise<string> {
+  return new Promise(
+    (resolve, reject) => {
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+        const result =
+          String(
+            reader.result || ""
+          );
+
+        const commaIndex =
+          result.indexOf(",");
+
+        resolve(
+          commaIndex >= 0
+            ? result.slice(
+                commaIndex + 1
+              )
+            : result
+        );
+      };
+
+      reader.onerror = () => {
+        reject(
+          new Error(
+            "Unable to read image file"
+          )
+        );
+      };
+
+      reader.readAsDataURL(file);
+    }
+  );
 }
 
 // ============================================================
-// DEFAULT API OBJECT
+// DEFAULT EXPORT
 // ============================================================
 
-export const api = {
+export default {
+  apiGet,
+  apiPost,
+
   getSheet,
   adminGet,
-  postApi,
+
   createRecord,
   updateRecord,
   deleteRecord,
+
   registerPlayer,
   registerCollege,
-  loginAdmin,
-  logoutAdmin,
-  uploadImage,
-  testApi,
-};
 
-export default api;
+  login,
+  logout,
+
+  uploadImage,
+  testConnection,
+
+  getAdminToken,
+  getAdmin,
+  setAdminSession,
+  clearAdminSession,
+};
