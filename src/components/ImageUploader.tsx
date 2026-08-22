@@ -1,9 +1,42 @@
-
 import { useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { uploadImage as uploadImageApi } from "@/services/api";
 import { FiUpload, FiTrash2, FiImage, FiLoader } from "react-icons/fi";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+
+function getAdminToken(): string {
+  return localStorage.getItem("jcsam_admin_token") || "";
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // strip the "data:image/png;base64," prefix — Apps Script wants raw base64
+      resolve(result.split(",")[1] || "");
+    };
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadToDrive(file: File, bucket: string): Promise<string> {
+  const base64 = await fileToBase64(file);
+  const token = getAdminToken();
+
+  if (!token) {
+    throw new Error("You must be logged in as admin to upload images.");
+  }
+
+  const result: any = await uploadImageApi(base64, file.name, file.type, bucket, token);
+
+  if (!result.success || !result.url) {
+    throw new Error(result.error || "Upload failed");
+  }
+
+  return result.url;
+}
 
 interface ImageUploaderProps {
   bucket: string;
@@ -34,12 +67,8 @@ export const ImageUploader = ({
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-      onUpload(data.publicUrl);
+      const url = await uploadToDrive(file, bucket);
+      onUpload(url);
       toast.success("Image uploaded!");
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
@@ -105,12 +134,8 @@ export const MultiImageUploader = ({
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-      onAdd(data.publicUrl, caption);
+      const url = await uploadToDrive(file, bucket);
+      onAdd(url, caption);
       setCaption("");
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
@@ -122,7 +147,6 @@ export const MultiImageUploader = ({
 
   return (
     <div className="space-y-4">
-      {/* Upload area */}
       <div className="space-y-2">
         <input
           type="text"
@@ -143,7 +167,6 @@ export const MultiImageUploader = ({
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
       </div>
 
-      {/* Image grid */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <AnimatePresence>

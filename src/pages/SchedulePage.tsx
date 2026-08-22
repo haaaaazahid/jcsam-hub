@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useSchedules, useSports } from "@/hooks/useSupabaseData";
+import { useSchedules, useSports } from "@/hooks/useAppData";
 import { FiCalendar, FiMapPin, FiLoader } from "react-icons/fi";
 
 const SchedulePage = () => {
@@ -82,3 +82,4 @@ const SchedulePage = () => {
 };
 
 export default SchedulePage;
+

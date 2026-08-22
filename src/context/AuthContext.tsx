@@ -1,119 +1,220 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 
-interface AuthContextType {
-  isAuthenticated: boolean;
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<boolean>;
-  updatePassword: (newPassword: string) => Promise<boolean>;
-  signInWithGoogle: () => Promise<{ error?: any }>;
+import {
+  login,
+  logout,
+  getAdminToken,
+  getAdmin,
+  setAdminSession,
+  clearAdminSession,
+} from "@/services/api";
+
+// ============================================================
+// TYPES
+// ============================================================
+
+interface Admin {
+  id?: string;
+  email?: string;
+  name?: string;
+  role?: string;
+  [key: string]: any;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+interface Session {
+  token: string;
+  admin: Admin;
+}
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-};
+interface AuthContextType {
+  user: Admin | null;
+  session: Session | null;
+  loading: boolean;
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
+
+  signOut: () => Promise<void>;
+
+  isAuthenticated: boolean;
+}
+
+// ============================================================
+// CONTEXT
+// ============================================================
+
+const AuthContext = createContext<
+  AuthContextType | undefined
+>(undefined);
+
+// ============================================================
+// PROVIDER
+// ============================================================
+
+export const AuthProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [user, setUser] = useState<Admin | null>(null);
+
+  const [session, setSession] =
+    useState<Session | null>(null);
+
   const [loading, setLoading] = useState(true);
 
+  // ==========================================================
+  // RESTORE EXISTING ADMIN SESSION
+  // ==========================================================
+
   useEffect(() => {
-    let isMounted = true;
+    try {
+      const token = getAdminToken();
+      const admin = getAdmin();
 
-    const initAuth = async () => {
+      if (token && admin) {
+        setSession({
+          token,
+          admin,
+        });
+
+        setUser(admin);
+      }
+    } catch {
+      clearAdminSession();
+      setSession(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ==========================================================
+  // SIGN IN
+  // ==========================================================
+
+  const signIn = useCallback(
+    async (
+      email: string,
+      password: string
+    ): Promise<{
+      success: boolean;
+      error?: string;
+    }> => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const result = await login(
+          email,
+          password
+        );
 
-        if (!isMounted) return;
+        const admin = result.admin || {};
 
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (err) {
-        console.error("Auth init error:", err);
-      } finally {
-        if (isMounted) setLoading(false);
+        // api.ts already stores the session,
+        // but explicitly syncing here keeps AuthContext
+        // immediately consistent.
+        setAdminSession(
+          result.token,
+          admin
+        );
+
+        const newSession: Session = {
+          token: result.token,
+          admin,
+        };
+
+        setSession(newSession);
+        setUser(admin);
+
+        return {
+          success: true,
+        };
+      } catch (error: any) {
+        clearAdminSession();
+
+        setSession(null);
+        setUser(null);
+
+        return {
+          success: false,
+          error:
+            error?.message ||
+            "Login failed",
+        };
       }
-    };
+    },
+    []
+  );
 
-    initAuth();
+  // ==========================================================
+  // SIGN OUT
+  // ==========================================================
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!isMounted) return;
-
-        setSession(session);
-        setUser(session?.user ?? null);
+  const signOut = useCallback(
+    async (): Promise<void> => {
+      try {
+        await logout();
+      } catch {
+        // Server logout failure should not prevent
+        // clearing the local session.
+        clearAdminSession();
       }
-    );
 
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+      setSession(null);
+      setUser(null);
+    },
+    []
+  );
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { success: !error, error: error?.message };
-  }, []);
-
-  const signup = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { success: !error, error: error?.message };
-  }, []);
-
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
-
-  const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/admin/reset-password`,
-    });
-    return !error;
-  }, []);
-
-  const updatePassword = useCallback(async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    return !error;
-  }, []);
-
-  const signInWithGoogle = useCallback(async () => {
-    return await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin, // ✅ safest (no broken route)
-      },
-    });
-  }, []);
+  // ==========================================================
+  // PROVIDER
+  // ==========================================================
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!user,
         user,
         session,
         loading,
-        login,
-        signup,
-        logout,
-        resetPassword,
-        updatePassword,
-        signInWithGoogle,
+        signIn,
+        signOut,
+        isAuthenticated:
+          !!session?.token,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+
+// ============================================================
+// useAuth HOOK
+// ============================================================
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      "useAuth must be used within an AuthProvider"
+    );
+  }
+
+  return context;
+};
+
+// ============================================================
+// DEFAULT EXPORT
+// ============================================================
+
+export default AuthContext;

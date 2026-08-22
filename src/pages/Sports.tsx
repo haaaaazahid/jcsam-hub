@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useSports } from "@/hooks/useSupabaseData";
+import { useSports } from "@/hooks/useAppData";
 import { FiLoader } from "react-icons/fi";
 
 const Sports = () => {
@@ -45,3 +45,4 @@ const Sports = () => {
 };
 
 export default Sports;
+

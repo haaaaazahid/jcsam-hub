@@ -20,6 +20,8 @@ export interface ApiResponse<T = any> {
   [key: string]: any;
 }
 
+type ApiRecord = Record<string, any>;
+
 // ============================================================
 // SESSION
 // ============================================================
@@ -64,14 +66,14 @@ function normalizeDate(value: any): any {
   return value;
 }
 
-export function normalizeRecord<
-  T extends Record<string, any>
->(record: T): T {
+export function normalizeRecord<T extends ApiRecord>(
+  record: T
+): T {
   if (!record || typeof record !== "object") {
     return record;
   }
 
-  const result: any = { ...record };
+  const result: ApiRecord = { ...record };
 
   // ----------------------------------------------------------
   // ID aliases
@@ -251,12 +253,14 @@ export function normalizeRecord<
     );
   }
 
-  return result;
+  return result as T;
 }
 
 export function normalizeRecords<
-  T extends Record<string, any>
->(records: T[]): T[] {
+  T extends ApiRecord
+>(
+  records: T[]
+): T[] {
   if (!Array.isArray(records)) {
     return [];
   }
@@ -342,9 +346,9 @@ export async function apiGet<T = any>(
     }
   );
 
-  return parseResponse(
+  return (await parseResponse(
     response
-  ) as Promise<ApiResponse<T>>;
+  )) as ApiResponse<T>;
 }
 
 // ============================================================
@@ -360,6 +364,8 @@ export async function apiPost<T = any>(
     {
       method: "POST",
       headers: {
+        // text/plain avoids unnecessary CORS preflight
+        // with Google Apps Script Web Apps.
         "Content-Type":
           "text/plain;charset=utf-8",
       },
@@ -370,16 +376,18 @@ export async function apiPost<T = any>(
     }
   );
 
-  return parseResponse(
+  return (await parseResponse(
     response
-  ) as Promise<ApiResponse<T>>;
+  )) as ApiResponse<T>;
 }
 
 // ============================================================
 // TEST
 // ============================================================
 
-export async function testConnection() {
+export async function testConnection(): Promise<
+  ApiResponse
+> {
   return apiGet("test");
 }
 
@@ -387,7 +395,9 @@ export async function testConnection() {
 // SHEETS
 // ============================================================
 
-export async function getSheet<T = any>(
+export async function getSheet<
+  T extends ApiRecord = ApiRecord
+>(
   sheet: string
 ): Promise<T[]> {
   const result =
@@ -396,14 +406,18 @@ export async function getSheet<T = any>(
       { sheet }
     );
 
+  const records = Array.isArray(result.data)
+    ? result.data
+    : [];
+
   return normalizeRecords(
-    Array.isArray(result.data)
-      ? result.data
-      : []
+    records as T[]
   );
 }
 
-export async function adminGet<T = any>(
+export async function adminGet<
+  T extends ApiRecord = ApiRecord
+>(
   sheet: string
 ): Promise<T[]> {
   const token =
@@ -424,10 +438,12 @@ export async function adminGet<T = any>(
       }
     );
 
+  const records = Array.isArray(result.data)
+    ? result.data
+    : [];
+
   return normalizeRecords(
-    Array.isArray(result.data)
-      ? result.data
-      : []
+    records as T[]
   );
 }
 
@@ -436,10 +452,10 @@ export async function adminGet<T = any>(
 // ============================================================
 
 export async function createRecord<
-  T = any
+  T extends ApiRecord = ApiRecord
 >(
   sheet: string,
-  data: Record<string, any>
+  data: ApiRecord
 ): Promise<T> {
   const token =
     getAdminToken();
@@ -460,17 +476,20 @@ export async function createRecord<
       }
     );
 
+  const record =
+    result.data || data;
+
   return normalizeRecord(
-    result.data || data
+    record as T
   );
 }
 
 export async function updateRecord<
-  T = any
+  T extends ApiRecord = ApiRecord
 >(
   sheet: string,
   id: string,
-  data: Record<string, any>
+  data: ApiRecord
 ): Promise<T> {
   const token =
     getAdminToken();
@@ -492,11 +511,14 @@ export async function updateRecord<
       }
     );
 
-  return normalizeRecord(
+  const record =
     result.data || {
       id,
       ...data,
-    }
+    };
+
+  return normalizeRecord(
+    record as T
   );
 }
 
@@ -528,7 +550,7 @@ export async function deleteRecord(
 // ============================================================
 
 export async function registerPlayer(
-  data: Record<string, any>
+  data: ApiRecord
 ) {
   const result =
     await apiPost(
@@ -556,7 +578,7 @@ export async function registerPlayer(
 }
 
 export async function registerCollege(
-  data: Record<string, any>
+  data: ApiRecord
 ) {
   const result =
     await apiPost(

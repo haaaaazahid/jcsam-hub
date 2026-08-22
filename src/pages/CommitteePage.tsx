@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCommittee } from "@/hooks/useSupabaseData";
+import { useCommittee } from "@/hooks/useAppData";
 import { FiX, FiLoader } from "react-icons/fi";
 
 const CommitteePage = () => {
@@ -79,3 +79,4 @@ const CommitteePage = () => {
 };
 
 export default CommitteePage;
+

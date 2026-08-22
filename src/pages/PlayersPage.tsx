@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { usePlayers, useColleges, useSports } from "@/hooks/useSupabaseData";
+import { usePlayers, useColleges, useSports } from "@/hooks/useAppData";
 import { FiUsers, FiLoader, FiSearch } from "react-icons/fi";
 import { useState } from "react";
 
@@ -146,3 +146,4 @@ const PlayersPage = () => {
 };
 
 export default PlayersPage;
+

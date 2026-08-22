@@ -1,25 +1,23 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGallery, useSports } from "@/hooks/useSupabaseData";
-import { FiX, FiChevronLeft, FiChevronRight, FiLoader, FiArrowLeft } from "react-icons/fi";
+import { useGallery } from "@/hooks/useAppData";
+import { FiX, FiChevronLeft, FiChevronRight, FiLoader, FiArrowLeft, FiImage } from "react-icons/fi";
 
 const GalleryPage = () => {
   const { data: gallery = [], isLoading } = useGallery();
-  const { data: sports = [] } = useSports();
-  const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
-  // Group images by sport — show ALL sports including empty ones
-  const sportGroups = sports.map((sport: any) => ({
-    ...sport,
-    images: gallery.filter((img: any) => img.sport_id === sport.id),
+  const categories = Array.from(new Set(gallery.map((img: any) => img.category || "Uncategorized")));
+
+  const categoryGroups = categories.map((cat) => ({
+    name: cat,
+    images: gallery.filter((img: any) => (img.category || "Uncategorized") === cat),
   }));
 
-  const currentImages = selectedSport
-    ? gallery.filter((img: any) => img.sport_id === selectedSport)
+  const currentImages = selectedCategory
+    ? gallery.filter((img: any) => (img.category || "Uncategorized") === selectedCategory)
     : [];
-
-  const selectedSportData = sports.find((s: any) => s.id === selectedSport) as any;
 
   return (
     <div className="page-container py-12">
@@ -30,17 +28,16 @@ const GalleryPage = () => {
 
       {isLoading ? (
         <div className="flex justify-center py-12"><FiLoader className="w-6 h-6 animate-spin text-primary" /></div>
-      ) : selectedSport ? (
-        /* Sport-specific gallery view */
+      ) : selectedCategory ? (
         <div>
           <button
-            onClick={() => { setSelectedSport(null); setLightboxIdx(null); }}
+            onClick={() => { setSelectedCategory(null); setLightboxIdx(null); }}
             className="flex items-center gap-2 text-sm text-primary hover:underline mb-6"
           >
-            <FiArrowLeft /> Back to All Sports
+            <FiArrowLeft /> Back to All Categories
           </button>
           <h2 className="text-2xl font-display font-bold text-foreground mb-6">
-            {selectedSportData?.icon} {selectedSportData?.name} Gallery
+            {selectedCategory}
             <span className="text-sm font-normal text-muted-foreground ml-2">({currentImages.length} photos)</span>
           </h2>
           {currentImages.length > 0 ? (
@@ -67,63 +64,54 @@ const GalleryPage = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <span className="text-8xl mb-4">{selectedSportData?.icon}</span>
+              <FiImage className="w-16 h-16 mb-4 opacity-30" />
               <p className="text-lg font-medium">No photos yet</p>
-              <p className="text-sm">Photos will appear here once uploaded by the admin.</p>
             </div>
           )}
         </div>
       ) : (
-        /* Sport folders view */
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
-          {sportGroups.map((sport: any, i: number) => (
+          {categoryGroups.map((cat, i) => (
             <motion.div
-              key={sport.id}
+              key={cat.name}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06, duration: 0.5 }}
               whileHover={{ y: -8, scale: 1.03 }}
-              onClick={() => setSelectedSport(sport.id)}
+              onClick={() => setSelectedCategory(cat.name)}
               className="cursor-pointer group"
             >
               <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-muted">
-                {sport.images.length > 0 ? (
+                {cat.images.length > 0 ? (
                   <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
-                    {sport.images.slice(0, 4).map((img: any) => (
-                      <img
-                        key={img.id}
-                        src={img.url}
-                        alt={img.caption}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                    {cat.images.slice(0, 4).map((img: any) => (
+                      <img key={img.id} src={img.url} alt={img.caption} className="w-full h-full object-cover" loading="lazy" />
                     ))}
-                    {sport.images.length < 4 && Array.from({ length: 4 - Math.min(sport.images.length, 4) }).map((_, j) => (
-                      <div key={`placeholder-${j}`} className="bg-muted" />
+                    {cat.images.length < 4 && Array.from({ length: 4 - Math.min(cat.images.length, 4) }).map((_, j) => (
+                      <div key={`ph-${j}`} className="bg-muted" />
                     ))}
                   </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <span className="text-6xl">{sport.icon}</span>
+                    <FiImage className="w-12 h-12 text-muted-foreground/40" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent flex items-end p-4 group-hover:from-primary/80 transition-all duration-500">
                   <div>
-                    <p className="text-white text-lg font-bold">{sport.icon} {sport.name}</p>
-                    <p className="text-white/70 text-sm">{sport.images.length} {sport.images.length === 1 ? "photo" : "photos"}</p>
+                    <p className="text-white text-lg font-bold">{cat.name}</p>
+                    <p className="text-white/70 text-sm">{cat.images.length} {cat.images.length === 1 ? "photo" : "photos"}</p>
                   </div>
                 </div>
               </div>
             </motion.div>
           ))}
-          {sportGroups.length === 0 && (
-            <p className="col-span-full text-center text-muted-foreground py-12">No sports found.</p>
+          {categoryGroups.length === 0 && (
+            <p className="col-span-full text-center text-muted-foreground py-12">No photos yet.</p>
           )}
         </div>
       )}
 
-      {/* Lightbox */}
       <AnimatePresence>
         {lightboxIdx !== null && currentImages.length > 0 && (
           <motion.div
@@ -134,10 +122,7 @@ const GalleryPage = () => {
             <button onClick={() => setLightboxIdx(null)} className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-lg z-10">
               <FiX className="w-6 h-6" />
             </button>
-            <button
-              onClick={e => { e.stopPropagation(); setLightboxIdx(Math.max(0, lightboxIdx - 1)); }}
-              className="absolute left-4 p-2 text-white hover:bg-white/10 rounded-lg"
-            >
+            <button onClick={e => { e.stopPropagation(); setLightboxIdx(Math.max(0, lightboxIdx - 1)); }} className="absolute left-4 p-2 text-white hover:bg-white/10 rounded-lg">
               <FiChevronLeft className="w-8 h-8" />
             </button>
             <motion.img
@@ -149,10 +134,7 @@ const GalleryPage = () => {
               className="max-h-[80vh] max-w-[90vw] rounded-xl object-contain"
               onClick={e => e.stopPropagation()}
             />
-            <button
-              onClick={e => { e.stopPropagation(); setLightboxIdx(Math.min(currentImages.length - 1, lightboxIdx + 1)); }}
-              className="absolute right-4 p-2 text-white hover:bg-white/10 rounded-lg"
-            >
+            <button onClick={e => { e.stopPropagation(); setLightboxIdx(Math.min(currentImages.length - 1, lightboxIdx + 1)); }} className="absolute right-4 p-2 text-white hover:bg-white/10 rounded-lg">
               <FiChevronRight className="w-8 h-8" />
             </button>
             <p className="absolute bottom-6 text-white text-center text-sm font-medium">{currentImages[lightboxIdx]?.caption}</p>

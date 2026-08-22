@@ -1,33 +1,138 @@
-import { supabase } from "@/integrations/supabase/client";
+// ============================================================
+// JCSAM HUB - AUTH SERVICE
+// GOOGLE SHEETS / APPS SCRIPT
+// ============================================================
+
+import {
+  login,
+  logout,
+  getAdminToken,
+  getAdmin,
+  setAdminSession,
+  clearAdminSession,
+} from "@/services/api";
 
 export const authService = {
-  async login(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { success: !error, error: error?.message };
+  // ==========================================================
+  // LOGIN
+  // ==========================================================
+
+  async login(
+    email: string,
+    password: string
+  ) {
+    try {
+      const result =
+        await login(
+          email,
+          password
+        );
+
+      if (
+        result.token
+      ) {
+        setAdminSession(
+          result.token,
+          result.admin || {}
+        );
+      }
+
+      return {
+        success: true,
+        token: result.token,
+        admin: result.admin || {},
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error:
+          error?.message ||
+          "Login failed",
+      };
+    }
   },
+
+  // ==========================================================
+  // LOGOUT
+  // ==========================================================
 
   async logout() {
-    await supabase.auth.signOut();
+    try {
+      await logout();
+    } catch {
+      clearAdminSession();
+    }
   },
 
-  async resetPassword(email: string, redirectUrl: string) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
-    return { success: !error, error: error?.message };
+  // ==========================================================
+  // RESET PASSWORD
+  // ==========================================================
+
+  async resetPassword() {
+    return {
+      success: false,
+      error:
+        "Password reset is not currently available.",
+    };
   },
 
-  async updatePassword(newPassword: string) {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    return { success: !error, error: error?.message };
+  // ==========================================================
+  // UPDATE PASSWORD
+  // ==========================================================
+
+  async updatePassword() {
+    return {
+      success: false,
+      error:
+        "Password update is not currently available.",
+    };
   },
+
+  // ==========================================================
+  // GET SESSION
+  // ==========================================================
 
   async getSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session;
+    const token =
+      getAdminToken();
+
+    const admin =
+      getAdmin();
+
+    if (
+      !token ||
+      !admin
+    ) {
+      return null;
+    }
+
+    return {
+      token,
+      admin,
+    };
   },
 
-  onAuthStateChange(callback: (event: string, session: any) => void) {
-    return supabase.auth.onAuthStateChange(callback);
+  // ==========================================================
+  // AUTH STATE CHANGE
+  // ==========================================================
+
+  onAuthStateChange(
+    callback: (
+      event: string,
+      session: any
+    ) => void
+  ) {
+    // Google Sheets/App Script does not provide
+   
+
+    return {
+      data: {
+        subscription: {
+          unsubscribe() {
+            // Intentionally empty.
+          },
+        },
+      },
+    };
   },
 };

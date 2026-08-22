@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNotices, useSports } from "@/hooks/useSupabaseData";
+import { useNotices, useSports } from "@/hooks/useAppData";
 import { FiSearch, FiX, FiDownload, FiLoader } from "react-icons/fi";
 
 const NoticesPage = () => {
@@ -113,3 +113,4 @@ const NoticesPage = () => {
 };
 
 export default NoticesPage;
+

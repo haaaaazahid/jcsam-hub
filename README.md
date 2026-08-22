@@ -6,7 +6,7 @@ This project is a management portal for the Junior College Sports Association of
 
 - **Frontend**: React, TypeScript, Vite
 - **Styling**: Tailwind CSS, Radix UI, Lucide Icons
-- **Backend/Database**: Supabase
+- **Backend/Database**: Appscript
 - **Animations**: Framer Motion
 
 ## Getting Started
@@ -16,10 +16,7 @@ This project is a management portal for the Junior College Sports Association of
    ```sh
    npm install
    ```
-3. Set up environment variables in a `.env` file:
-   ```
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_key
+
    ```
 4. Run the development server:
    ```sh
@@ -30,4 +27,4 @@ This project is a management portal for the Junior College Sports Association of
 
 The admin portal is accessible at `/admin/login`. 
 - Direct email/password login is available for registered admins.
-- Google OAuth is supported via Supabase.
+- Google OAuth is supported via Appscript.

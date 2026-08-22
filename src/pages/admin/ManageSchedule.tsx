@@ -1,6 +1,6 @@
 
 import CrudTable from "@/components/CrudTable";
-import { useSchedules, useCreateSchedule, useUpdateSchedule, useDeleteSchedule, useSports } from "@/hooks/useSupabaseData";
+import { useSchedules, useCreateSchedule, useUpdateSchedule, useDeleteSchedule, useSports } from "@/hooks/useAppData";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -46,3 +46,4 @@ const ManageSchedule = () => {
 };
 
 export default ManageSchedule;
+

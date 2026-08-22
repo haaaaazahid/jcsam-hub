@@ -1,30 +1,183 @@
-import { supabaseAdmin } from "@/integrations/supabase/adminClient";
+// ============================================================
+// JCSAM HUB - COMMITTEE SERVICE
+// ============================================================
+
+import {
+  getSheet,
+  adminGet,
+  createRecord,
+  updateRecord,
+  deleteRecord,
+  getAdminToken,
+} from "@/services/api";
+
+const SHEET =
+  "CommitteeMembers";
+
+// ============================================================
+// NORMALIZE
+// ============================================================
+
+function normalizeMember(
+  raw: any
+) {
+  return {
+    ...raw,
+
+    id:
+      raw.id ||
+      raw.memberId ||
+      "",
+
+    image:
+      raw.image ||
+      raw.image_url ||
+      "",
+
+    image_url:
+      raw.image_url ||
+      raw.image ||
+      "",
+
+    role:
+      raw.role ||
+      raw.designation ||
+      "",
+
+    designation:
+      raw.designation ||
+      raw.role ||
+      "",
+
+    institution:
+      raw.institution ||
+      "",
+
+    display_order:
+      raw.display_order ??
+      raw.displayOrder ??
+      0,
+  };
+}
+
+// ============================================================
+// SERVICE
+// ============================================================
 
 export const committeeService = {
   async getAll() {
+    const token =
+      getAdminToken();
 
-    const { data, error } = await supabaseAdmin
-      .from("committee_members")
-      .select("*")
-      .order("display_order");
-    if (error) throw error;
-    return data ?? [];
+    let data;
+
+    if (token) {
+      try {
+        data =
+          await adminGet<any>(
+            SHEET
+          );
+      } catch {
+        data =
+          await getSheet<any>(
+            SHEET
+          );
+      }
+    } else {
+      data =
+        await getSheet<any>(
+          SHEET
+        );
+    }
+
+    return data
+      .map(normalizeMember)
+      .sort(
+        (a, b) =>
+          Number(
+            a.display_order ?? 0
+          ) -
+          Number(
+            b.display_order ?? 0
+          )
+      );
   },
 
   async create(item: any) {
-    const { id, created_at, updated_at, ...payload } = item;
-    const { error } = await supabaseAdmin.from("committee_members").insert(payload);
-    if (error) throw new Error(error.message);
+    const {
+      id,
+      created_at,
+      updated_at,
+      createdAt,
+      updatedAt,
+      image,
+      role,
+      institution,
+      ...payload
+    } = item;
+
+    return createRecord(
+      SHEET,
+      {
+        ...payload,
+        image_url:
+          item.image ||
+          item.image_url ||
+          "",
+        role:
+          item.role ||
+          item.designation ||
+          "",
+        institution:
+          item.institution ||
+          "",
+      }
+    );
   },
 
   async update(item: any) {
-    const { id, created_at, updated_at, ...rest } = item;
-    const { error } = await supabaseAdmin.from("committee_members").update(rest).eq("id", id);
-    if (error) throw new Error(error.message);
+    if (!item.id) {
+      throw new Error(
+        "Committee member ID is required."
+      );
+    }
+
+    const {
+      id,
+      created_at,
+      updated_at,
+      createdAt,
+      updatedAt,
+      image,
+      role,
+      institution,
+      ...payload
+    } = item;
+
+    return updateRecord(
+      SHEET,
+      String(id),
+      {
+        ...payload,
+        image_url:
+          item.image ||
+          item.image_url ||
+          "",
+        role:
+          item.role ||
+          item.designation ||
+          "",
+        institution:
+          item.institution ||
+          "",
+      }
+    );
   },
 
   async remove(id: string) {
-    const { error } = await supabaseAdmin.from("committee_members").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    return deleteRecord(
+      SHEET,
+      String(id)
+    );
   },
 };

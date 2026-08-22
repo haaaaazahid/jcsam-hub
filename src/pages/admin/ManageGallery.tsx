@@ -1,14 +1,27 @@
-
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGallery, useCreateGalleryItem, useDeleteGalleryItem, useSports } from "@/hooks/useSupabaseData";
-import { supabase } from "@/integrations/supabase/client";
-import { FiUpload, FiTrash2, FiLoader, FiImage, FiArrowLeft, FiCheckSquare, FiSquare } from "react-icons/fi";
+import {
+  useGallery,
+  useCreateGalleryItem,
+  useDeleteGalleryItem,
+  useSports,
+} from "@/hooks/useAppData";
+import { uploadImage } from "@/services/api";
+import {
+  FiUpload,
+  FiTrash2,
+  FiLoader,
+  FiImage,
+  FiArrowLeft,
+  FiCheckSquare,
+  FiSquare,
+} from "react-icons/fi";
 import { toast } from "sonner";
 
 const ManageGallery = () => {
   const { data: gallery = [], isLoading } = useGallery();
   const { data: sports = [] } = useSports();
+
   const createItem = useCreateGalleryItem();
   const deleteItem = useDeleteGalleryItem();
 
@@ -16,117 +29,356 @@ const ManageGallery = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Group images by sport
+  // ============================================================
+  // GROUP GALLERY IMAGES BY SPORT
+  // ============================================================
+
   const sportGroups = sports.map((sport: any) => ({
     ...sport,
-    images: gallery.filter((img: any) => img.sport_id === sport.id),
+    images: gallery.filter(
+      (img: any) => String(img.sport_id) === String(sport.id)
+    ),
   }));
 
   const currentImages = selectedSport
-    ? gallery.filter((img: any) => img.sport_id === selectedSport)
+    ? gallery.filter(
+        (img: any) => String(img.sport_id) === String(selectedSport)
+      )
     : [];
 
-  const selectedSportData = sports.find((s: any) => s.id === selectedSport) as any;
+  const selectedSportData = sports.find(
+    (sport: any) => String(sport.id) === String(selectedSport)
+  ) as any;
 
-  const handleMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !selectedSport) return;
+  // ============================================================
+  // FILE -> BASE64
+  // ============================================================
 
-    setUploading(true);
-    let successCount = 0;
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-    for (const file of Array.from(files)) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} is too large (max 10MB)`);
-        continue;
-      }
-      try {
-        const ext = file.name.split(".").pop();
-        const path = `${selectedSport}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error } = await supabase.storage.from("gallery-images").upload(path, file, { upsert: false });
-        if (error) throw error;
-        const { data } = supabase.storage.from("gallery-images").getPublicUrl(path);
-        
-        await createItem.mutateAsync({
-          url: data.publicUrl,
-          sport_id: selectedSport,
-          caption: file.name.replace(/\.[^.]+$/, ""),
-          date: new Date().toISOString().split("T")[0],
-        });
-        successCount++;
-      } catch (err: any) {
-        toast.error(`Failed: ${file.name}`);
-      }
-    }
+      reader.onload = () => {
+        const result = String(reader.result);
 
-    if (successCount > 0) toast.success(`${successCount} image(s) uploaded!`);
-    setUploading(false);
-    if (inputRef.current) inputRef.current.value = "";
+        const base64 = result.includes(",")
+          ? result.split(",")[1]
+          : result;
+
+        resolve(base64);
+      };
+
+      reader.onerror = () => {
+        reject(new Error("Failed to read image"));
+      };
+
+      reader.readAsDataURL(file);
+    });
   };
 
+  // ============================================================
+  // MULTI IMAGE UPLOAD
+  // ============================================================
+
+  const handleMultiUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+
+    if (!files || files.length === 0 || !selectedSport) {
+      return;
+    }
+
+    const token = localStorage.getItem("jcsam_admin_token") || "";
+
+    if (!token) {
+      toast.error("Admin session expired. Please login again.");
+      return;
+    }
+
+    setUploading(true);
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    try {
+      for (const file of Array.from(files)) {
+        // --------------------------------------------------------
+        // VALIDATE FILE SIZE
+        // --------------------------------------------------------
+
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum size is 10MB.`);
+          failedCount++;
+          continue;
+        }
+
+        // --------------------------------------------------------
+        // VALIDATE FILE TYPE
+        // --------------------------------------------------------
+
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} is not a valid image.`);
+          failedCount++;
+          continue;
+        }
+
+        try {
+          // ------------------------------------------------------
+          // CONVERT TO BASE64
+          // ------------------------------------------------------
+
+          const base64 = await fileToBase64(file);
+
+          // ------------------------------------------------------
+          // UPLOAD TO GOOGLE DRIVE
+          // ------------------------------------------------------
+
+          const uploadResult = await uploadImage(
+            base64,
+            file.name,
+            file.type,
+            "gallery",
+            token
+          );
+
+          if (!uploadResult.success || !uploadResult.url) {
+            throw new Error(
+              uploadResult.error || "Image upload failed"
+            );
+          }
+
+          // ------------------------------------------------------
+          // CREATE GOOGLE SHEETS GALLERY RECORD
+          // ------------------------------------------------------
+
+          const caption = file.name.replace(/\.[^/.]+$/, "");
+
+          await createItem.mutateAsync({
+            url: uploadResult.url,
+            sport_id: selectedSport,
+            caption,
+            date: new Date().toISOString().split("T")[0],
+          });
+
+          successCount++;
+        } catch (error: any) {
+          console.error("Gallery upload error:", error);
+          failedCount++;
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      }
+
+      // ----------------------------------------------------------
+      // FINAL RESULT
+      // ----------------------------------------------------------
+
+      if (successCount > 0) {
+        toast.success(
+          `${successCount} image${
+            successCount === 1 ? "" : "s"
+          } uploaded successfully!`
+        );
+      }
+
+      if (failedCount > 0) {
+        toast.error(
+          `${failedCount} image${
+            failedCount === 1 ? "" : "s"
+          } failed to upload.`
+        );
+      }
+    } finally {
+      setUploading(false);
+
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    }
+  };
+
+  // ============================================================
+  // SELECT IMAGE
+  // ============================================================
+
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
       return next;
     });
   };
 
+  // ============================================================
+  // SELECT ALL
+  // ============================================================
+
   const selectAll = () => {
     if (selectedIds.size === currentImages.length) {
       setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(currentImages.map((img: any) => img.id)));
+      return;
+    }
+
+    setSelectedIds(
+      new Set(
+        currentImages.map((image: any) => String(image.id))
+      )
+    );
+  };
+
+  // ============================================================
+  // BULK DELETE
+  // ============================================================
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) {
+      return;
+    }
+
+    const ids = Array.from(selectedIds);
+    const count = ids.length;
+
+    setDeleting(true);
+
+    let successCount = 0;
+
+    try {
+      for (const id of ids) {
+        try {
+          await deleteItem.mutateAsync(id);
+          successCount++;
+        } catch (error) {
+          console.error("Bulk delete error:", error);
+        }
+      }
+
+      setSelectedIds(new Set());
+
+      if (successCount > 0) {
+        toast.success(
+          `${successCount} image${
+            successCount === 1 ? "" : "s"
+          } deleted successfully!`
+        );
+      }
+
+      if (successCount < count) {
+        toast.error(
+          `${count - successCount} image${
+            count - successCount === 1 ? "" : "s"
+          } could not be deleted.`
+        );
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    setDeleting(true);
-    for (const id of selectedIds) {
-      try {
-        await deleteItem.mutateAsync(id);
-      } catch {}
+  // ============================================================
+  // SINGLE DELETE
+  // ============================================================
+
+  const handleDelete = async (
+    e: React.MouseEvent,
+    id: string
+  ) => {
+    e.stopPropagation();
+
+    try {
+      await deleteItem.mutateAsync(id);
+
+      setSelectedIds((previous) => {
+        const next = new Set(previous);
+        next.delete(id);
+        return next;
+      });
+
+      toast.success("Image deleted successfully");
+    } catch (error: any) {
+      toast.error(
+        error?.message || "Failed to delete image"
+      );
     }
-    setSelectedIds(new Set());
-    setDeleting(false);
-    toast.success(`${selectedIds.size} image(s) deleted!`);
   };
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <FiLoader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // ============================================================
+  // MAIN UI
+  // ============================================================
 
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-foreground mb-6">Manage Gallery</h1>
+      <h1 className="text-2xl font-display font-bold text-foreground mb-6">
+        Manage Gallery
+      </h1>
 
       {selectedSport ? (
-        /* Sport gallery view */
+        // ======================================================
+        // SPORT GALLERY
+        // ======================================================
+
         <div>
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <button
-              onClick={() => { setSelectedSport(null); setSelectedIds(new Set()); }}
+              onClick={() => {
+                setSelectedSport(null);
+                setSelectedIds(new Set());
+              }}
               className="flex items-center gap-2 text-sm text-primary hover:underline"
             >
-              <FiArrowLeft /> Back to Sports
+              <FiArrowLeft />
+              Back to Sports
             </button>
+
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold text-foreground">
-                {selectedSportData?.icon} {selectedSportData?.name}
-                <span className="text-sm font-normal text-muted-foreground ml-2">({currentImages.length} photos)</span>
+                {selectedSportData?.icon}{" "}
+                {selectedSportData?.name}
+
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  ({currentImages.length} photos)
+                </span>
               </h2>
             </div>
           </div>
 
-          {/* Upload + Actions Bar */}
+          {/* ACTION BAR */}
+
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <button
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
               className="btn-primary flex items-center gap-2 text-sm"
             >
-              {uploading ? <FiLoader className="animate-spin" /> : <FiUpload />}
+              {uploading ? (
+                <FiLoader className="animate-spin" />
+              ) : (
+                <FiUpload />
+              )}
+
               {uploading ? "Uploading..." : "Upload Images"}
             </button>
+
             <input
               ref={inputRef}
               type="file"
@@ -142,16 +394,29 @@ const ManageGallery = () => {
                   onClick={selectAll}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
                 >
-                  {selectedIds.size === currentImages.length ? <FiCheckSquare /> : <FiSquare />}
-                  {selectedIds.size === currentImages.length ? "Deselect All" : "Select All"}
+                  {selectedIds.size === currentImages.length ? (
+                    <FiCheckSquare />
+                  ) : (
+                    <FiSquare />
+                  )}
+
+                  {selectedIds.size === currentImages.length
+                    ? "Deselect All"
+                    : "Select All"}
                 </button>
+
                 {selectedIds.size > 0 && (
                   <button
                     onClick={handleBulkDelete}
                     disabled={deleting}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm hover:bg-destructive/90 transition-colors"
                   >
-                    {deleting ? <FiLoader className="animate-spin" /> : <FiTrash2 />}
+                    {deleting ? (
+                      <FiLoader className="animate-spin" />
+                    ) : (
+                      <FiTrash2 />
+                    )}
+
                     Delete {selectedIds.size} Selected
                   </button>
                 )}
@@ -159,87 +424,188 @@ const ManageGallery = () => {
             )}
           </div>
 
-          {/* Images Grid */}
+          {/* IMAGE GRID */}
+
           {currentImages.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <AnimatePresence>
-                {currentImages.map((img: any) => (
-                  <motion.div
-                    key={img.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className={`relative group rounded-xl overflow-hidden border-2 aspect-square cursor-pointer transition-all ${
-                      selectedIds.has(img.id) ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => toggleSelect(img.id)}
-                  >
-                    <img src={img.url} alt={img.caption} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute top-2 left-2">
-                      <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
-                        selectedIds.has(img.id) ? "bg-primary text-primary-foreground" : "bg-foreground/30 text-white opacity-0 group-hover:opacity-100"
-                      }`}>
-                        {selectedIds.has(img.id) ? <FiCheckSquare className="w-4 h-4" /> : <FiSquare className="w-4 h-4" />}
-                      </div>
-                    </div>
-                    {img.caption && (
-                      <div className="absolute bottom-0 inset-x-0 bg-foreground/60 text-white text-xs px-2 py-1 truncate">
-                        {img.caption}
-                      </div>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteItem.mutate(img.id); }}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                {currentImages.map((img: any) => {
+                  const imageId = String(img.id);
+                  const isSelected = selectedIds.has(imageId);
+
+                  return (
+                    <motion.div
+                      key={imageId}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.9,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.9,
+                      }}
+                      className={`relative group rounded-xl overflow-hidden border-2 aspect-square cursor-pointer transition-all ${
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => toggleSelect(imageId)}
                     >
-                      <FiTrash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.div>
-                ))}
+                      <img
+                        src={img.url}
+                        alt={img.caption || "Gallery image"}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+
+                      {/* CHECKBOX */}
+
+                      <div className="absolute top-2 left-2">
+                        <div
+                          className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-foreground/30 text-white opacity-0 group-hover:opacity-100"
+                          }`}
+                        >
+                          {isSelected ? (
+                            <FiCheckSquare className="w-4 h-4" />
+                          ) : (
+                            <FiSquare className="w-4 h-4" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* CAPTION */}
+
+                      {img.caption && (
+                        <div className="absolute bottom-0 inset-x-0 bg-foreground/60 text-white text-xs px-2 py-1 truncate">
+                          {img.caption}
+                        </div>
+                      )}
+
+                      {/* DELETE */}
+
+                      <button
+                        onClick={(e) =>
+                          handleDelete(e, imageId)
+                        }
+                        disabled={deleteItem.isPending}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <FiTrash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border text-muted-foreground gap-3">
               <FiImage className="w-12 h-12" />
-              <p className="text-lg font-medium">No images yet</p>
-              <p className="text-sm">Click "Upload Images" to add photos for this sport</p>
+
+              <p className="text-lg font-medium">
+                No images yet
+              </p>
+
+              <p className="text-sm">
+                Click "Upload Images" to add photos for this sport
+              </p>
             </div>
           )}
         </div>
       ) : (
-        /* Sport folders view */
+        // ======================================================
+        // SPORT FOLDERS
+        // ======================================================
+
         <div>
-          <p className="text-muted-foreground mb-6">Select a sport to manage its gallery images.</p>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sportGroups.map((sport: any, i: number) => (
-              <motion.div
-                key={sport.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                onClick={() => setSelectedSport(sport.id)}
-                className="admin-card cursor-pointer group text-center"
-              >
-                <div className="text-4xl mb-3">{sport.icon}</div>
-                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{sport.name}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {sport.images.length} {sport.images.length === 1 ? "photo" : "photos"}
-                </p>
-                {sport.images.length > 0 && (
-                  <div className="flex justify-center gap-1 mt-3">
-                    {sport.images.slice(0, 3).map((img: any) => (
-                      <img key={img.id} src={img.url} alt="" className="w-8 h-8 rounded object-cover" />
-                    ))}
-                    {sport.images.length > 3 && (
-                      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                        +{sport.images.length - 3}
+          <p className="text-muted-foreground mb-6">
+            Select a sport to manage its gallery images.
+          </p>
+
+          {sportGroups.length > 0 ? (
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sportGroups.map(
+                (sport: any, index: number) => (
+                  <motion.div
+                    key={sport.id}
+                    initial={{
+                      opacity: 0,
+                      y: 20,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    transition={{
+                      delay: index * 0.04,
+                    }}
+                    whileHover={{
+                      y: -4,
+                      scale: 1.02,
+                    }}
+                    onClick={() =>
+                      setSelectedSport(String(sport.id))
+                    }
+                    className="admin-card cursor-pointer group text-center"
+                  >
+                    <div className="text-4xl mb-3">
+                      {sport.icon}
+                    </div>
+
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {sport.name}
+                    </h3>
+
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {sport.images.length}{" "}
+                      {sport.images.length === 1
+                        ? "photo"
+                        : "photos"}
+                    </p>
+
+                    {sport.images.length > 0 && (
+                      <div className="flex justify-center gap-1 mt-3">
+                        {sport.images
+                          .slice(0, 3)
+                          .map((img: any) => (
+                            <img
+                              key={img.id}
+                              src={img.url}
+                              alt=""
+                              className="w-8 h-8 rounded object-cover"
+                            />
+                          ))}
+
+                        {sport.images.length > 3 && (
+                          <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                            +{sport.images.length - 3}
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
+                  </motion.div>
+                )
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border text-muted-foreground">
+              <FiImage className="w-12 h-12 mb-3" />
+
+              <p className="text-lg font-medium">
+                No sports found
+              </p>
+
+              <p className="text-sm">
+                Add sports first before managing gallery images.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

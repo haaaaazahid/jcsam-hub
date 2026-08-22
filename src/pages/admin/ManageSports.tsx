@@ -1,7 +1,7 @@
 
 import CrudTable from "@/components/CrudTable";
 import { ImageUploader, MultiImageUploader } from "@/components/ImageUploader";
-import { useSports, useCreateSport, useUpdateSport, useDeleteSport, useSportImages, useAddSportImage, useDeleteSportImage } from "@/hooks/useSupabaseData";
+import { useSports, useCreateSport, useUpdateSport, useDeleteSport, useSportImages, useAddSportImage, useDeleteSportImage } from "@/hooks/useAppData";
 import { useState } from "react";
 
 const ManageSports = () => {
@@ -74,3 +74,4 @@ const ManageSports = () => {
 };
 
 export default ManageSports;
+

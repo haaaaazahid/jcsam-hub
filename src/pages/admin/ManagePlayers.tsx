@@ -1,5 +1,5 @@
 import CrudTable from "@/components/CrudTable";
-import { usePlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer, useColleges, useSports } from "@/hooks/useSupabaseData";
+import { usePlayers, useCreatePlayer, useUpdatePlayer, useDeletePlayer, useColleges, useSports } from "@/hooks/useAppData";
 import { FiDownload } from "react-icons/fi";
 
 function downloadCSV(data: any[], colleges: any[], sports: any[], filename: string) {
@@ -72,3 +72,4 @@ const ManagePlayers = () => {
 };
 
 export default ManagePlayers;
+

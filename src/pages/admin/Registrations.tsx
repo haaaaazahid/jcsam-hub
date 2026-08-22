@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePlayers, useColleges, useUpdatePlayer, useUpdateCollege, useDeletePlayer, useDeleteCollege } from "@/hooks/useSupabaseData";
+import { usePlayers, useColleges, useUpdatePlayer, useUpdateCollege, useDeletePlayer, useDeleteCollege } from "@/hooks/useAppData";
 import { FiCheck, FiX, FiClock, FiAlertCircle, FiLoader, FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ const Registrations = () => {
   const pendingColleges = colleges.filter((c: any) => c.status === "pending");
   const rejectedColleges = colleges.filter((c: any) => c.status === "rejected");
 
-  // Only send plain fields to avoid Supabase errors from joined data
+ 
   const cleanPlayer = (player: any, status: string) => ({
     id: player.id,
     name: player.name,
@@ -337,3 +337,4 @@ const Registrations = () => {
 };
 
 export default Registrations;
+

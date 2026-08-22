@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { useDashboardStats, usePlayers } from "@/hooks/useSupabaseData";
+import { useDashboardStats, usePlayers } from "@/hooks/useAppData";
 import StatCounter from "@/components/StatCounter";
 import { FiUsers, FiCalendar, FiBell, FiUserCheck, FiLoader, FiClock } from "react-icons/fi";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -182,3 +182,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

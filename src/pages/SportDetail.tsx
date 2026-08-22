@@ -1,7 +1,7 @@
 
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useSports, useSchedules, useNotices, useSportImages } from "@/hooks/useSupabaseData";
+import { useSports, useSchedules, useNotices, useSportImages } from "@/hooks/useAppData";
 import { FiCalendar, FiArrowLeft, FiLoader } from "react-icons/fi";
 
 const SportDetail = () => {
@@ -112,3 +112,4 @@ const SportDetail = () => {
 };
 
 export default SportDetail;
+

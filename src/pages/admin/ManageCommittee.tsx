@@ -1,6 +1,6 @@
 import CrudTable from "@/components/CrudTable";
 import { ImageUploader } from "@/components/ImageUploader";
-import { useCommittee, useCreateCommitteeMember, useUpdateCommitteeMember, useDeleteCommitteeMember } from "@/hooks/useSupabaseData";
+import { useCommittee, useCreateCommitteeMember, useUpdateCommitteeMember, useDeleteCommitteeMember } from "@/hooks/useAppData";
 
 const ManageCommittee = () => {
   const { data: committee = [], isLoading } = useCommittee();
@@ -50,3 +50,4 @@ const ManageCommittee = () => {
 };
 
 export default ManageCommittee;
+
