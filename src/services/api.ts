@@ -12,144 +12,178 @@ const API_URL =
 export interface ApiResponse<T = any> {
   success: boolean;
   sheet?: string;
-  data?: T[];
-  error?: string;
+  data?: T;
   message?: string;
-  [key: string]: any;
+  error?: string;
+  token?: string;
+  admin?: any;
 }
 
 // ============================================================
-// GET
-// ============================================================
-
-export async function apiGet<T = any>(
-  action: string,
-  params: Record<string, string> = {}
-): Promise<ApiResponse<T>> {
-  const searchParams = new URLSearchParams({
-    action,
-    ...params,
-  });
-
-  const response = await fetch(
-    `${API_URL}?${searchParams.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status} ${response.statusText}`
-    );
-  }
-
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.error || "API request failed");
-  }
-
-  return result;
-}
-
-// ============================================================
-// POST
-// ============================================================
-
-export async function apiPost<T = any>(
-  action: string,
-  data: Record<string, any> = {}
-): Promise<ApiResponse<T>> {
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-    body: JSON.stringify({
-      action,
-      ...data,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status} ${response.statusText}`
-    );
-  }
-
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.error || "API request failed");
-  }
-
-  return result;
-}
-
-// ============================================================
-// GET SHEET
+// GET PUBLIC SHEET
 // ============================================================
 
 export async function getSheet<T = any>(
-  sheetName: string
+  sheet: string
 ): Promise<T[]> {
-  const result = await apiGet<T>("get", {
-    sheet: sheetName,
-  });
+  const url =
+    `${API_URL}?action=get&sheet=${encodeURIComponent(sheet)}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `API request failed: ${response.status}`
+    );
+  }
+
+  const result: ApiResponse<T[]> =
+    await response.json();
+
+  if (!result.success) {
+    throw new Error(
+      result.error || "Failed to fetch data"
+    );
+  }
 
   return result.data || [];
 }
 
 // ============================================================
-// PUBLIC DATA
+// ADMIN GET
 // ============================================================
 
-export async function getSports() {
-  return getSheet("Sports");
+export async function adminGet<T = any>(
+  sheet: string,
+  token: string
+): Promise<T[]> {
+  const url =
+    `${API_URL}?action=adminGet` +
+    `&sheet=${encodeURIComponent(sheet)}` +
+    `&token=${encodeURIComponent(token)}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `API request failed: ${response.status}`
+    );
+  }
+
+  const result: ApiResponse<T[]> =
+    await response.json();
+
+  if (!result.success) {
+    throw new Error(
+      result.error || "Failed to fetch data"
+    );
+  }
+
+  return result.data || [];
 }
 
-export async function getColleges() {
-  return getSheet("Colleges");
+// ============================================================
+// POST REQUEST
+// ============================================================
+
+export async function postApi<T = any>(
+  body: Record<string, any>
+): Promise<ApiResponse<T>> {
+
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `API request failed: ${response.status}`
+    );
+  }
+
+  const result: ApiResponse<T> =
+    await response.json();
+
+  if (!result.success) {
+    throw new Error(
+      result.error || "API request failed"
+    );
+  }
+
+  return result;
 }
 
-export async function getCommitteeMembers() {
-  return getSheet("CommitteeMembers");
+// ============================================================
+// CREATE
+// ============================================================
+
+export async function createRecord<T = any>(
+  sheet: string,
+  data: Record<string, any>,
+  token: string
+): Promise<T> {
+
+  const result =
+    await postApi<T>({
+      action: "create",
+      sheet,
+      data,
+      token,
+    });
+
+  return result.data as T;
 }
 
-export async function getSchedules() {
-  return getSheet("Schedules");
+// ============================================================
+// UPDATE
+// ============================================================
+
+export async function updateRecord(
+  sheet: string,
+  id: string,
+  data: Record<string, any>,
+  token: string
+): Promise<void> {
+
+  await postApi({
+    action: "update",
+    sheet,
+    id,
+    data,
+    token,
+  });
 }
 
-export async function getResults() {
-  return getSheet("Results");
-}
+// ============================================================
+// DELETE
+// ============================================================
 
-export async function getNotices() {
-  return getSheet("Notices");
-}
+export async function deleteRecord(
+  sheet: string,
+  id: string,
+  token: string
+): Promise<void> {
 
-export async function getGallery() {
-  return getSheet("Gallery");
-}
-
-export async function getSportImages() {
-  return getSheet("SportImages");
-}
-
-export async function getSettings() {
-  return getSheet("Settings");
+  await postApi({
+    action: "delete",
+    sheet,
+    id,
+    token,
+  });
 }
 
 // ============================================================
 // PLAYER REGISTRATION
 // ============================================================
 
-export async function registerPlayer(data: Record<string, any>) {
-  return apiPost("registerPlayer", {
+export async function registerPlayer(
+  data: Record<string, any>
+) {
+  return postApi({
+    action: "registerPlayer",
     data,
   });
 }
@@ -158,8 +192,11 @@ export async function registerPlayer(data: Record<string, any>) {
 // COLLEGE REGISTRATION
 // ============================================================
 
-export async function registerCollege(data: Record<string, any>) {
-  return apiPost("registerCollege", {
+export async function registerCollege(
+  data: Record<string, any>
+) {
+  return postApi({
+    action: "registerCollege",
     data,
   });
 }
@@ -168,82 +205,32 @@ export async function registerCollege(data: Record<string, any>) {
 // ADMIN LOGIN
 // ============================================================
 
-export async function adminLogin(
+export async function loginAdmin(
   email: string,
   password: string
 ) {
-  return apiPost("login", {
+
+  return postApi({
+    action: "login",
     email,
     password,
   });
+
 }
 
 // ============================================================
 // ADMIN LOGOUT
 // ============================================================
 
-export async function adminLogout(token: string) {
-  return apiPost("logout", {
-    token,
-  });
-}
-
-// ============================================================
-// ADMIN CRUD
-// ============================================================
-
-export async function createRecord(
-  token: string,
-  sheet: string,
-  data: Record<string, any>
+export async function logoutAdmin(
+  token: string
 ) {
-  return apiPost("create", {
-    token,
-    sheet,
-    data,
-  });
-}
 
-export async function updateRecord(
-  token: string,
-  sheet: string,
-  id: string,
-  data: Record<string, any>
-) {
-  return apiPost("update", {
+  return postApi({
+    action: "logout",
     token,
-    sheet,
-    id,
-    data,
-  });
-}
-
-export async function deleteRecord(
-  token: string,
-  sheet: string,
-  id: string
-) {
-  return apiPost("delete", {
-    token,
-    sheet,
-    id,
-  });
-}
-
-// ============================================================
-// ADMIN GET
-// ============================================================
-
-export async function adminGet<T = any>(
-  token: string,
-  sheet: string
-): Promise<T[]> {
-  const result = await apiGet<T>("adminGet", {
-    token,
-    sheet,
   });
 
-  return result.data || [];
 }
 
 // ============================================================
@@ -251,25 +238,56 @@ export async function adminGet<T = any>(
 // ============================================================
 
 export async function uploadImage(
-  token: string,
-  base64Data: string,
+  base64: string,
   fileName: string,
   mimeType: string,
-  bucket = "general"
+  bucket: string,
+  token: string
 ) {
-  return apiPost("uploadImage", {
-    token,
-    data: base64Data,
+
+  return postApi({
+    action: "uploadImage",
+    data: base64,
     fileName,
     mimeType,
     bucket,
+    token,
   });
+
 }
 
 // ============================================================
-// TEST
+// CONNECTION TEST
 // ============================================================
 
 export async function testApi() {
-  return apiGet("test");
+
+  const response =
+    await fetch(
+      `${API_URL}?action=test`
+    );
+
+  return response.json();
+
 }
+
+// ============================================================
+// DEFAULT API OBJECT
+// ============================================================
+
+export const api = {
+  getSheet,
+  adminGet,
+  postApi,
+  createRecord,
+  updateRecord,
+  deleteRecord,
+  registerPlayer,
+  registerCollege,
+  loginAdmin,
+  logoutAdmin,
+  uploadImage,
+  testApi,
+};
+
+export default api;
