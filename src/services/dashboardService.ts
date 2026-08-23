@@ -13,24 +13,24 @@ import {
 // HELPERS
 // ============================================================
 
-function countRecords(value: any): number {
+function ensureArray<T = any>(value: any): T[] {
   if (Array.isArray(value)) {
-    return value.length;
+    return value;
   }
 
   if (value && Array.isArray(value.data)) {
-    return value.data.length;
+    return value.data;
   }
 
   if (value && Array.isArray(value.rows)) {
-    return value.rows.length;
+    return value.rows;
   }
 
   if (value && Array.isArray(value.records)) {
-    return value.records.length;
+    return value.records;
   }
 
-  return 0;
+  return [];
 }
 
 // ============================================================
@@ -45,16 +45,24 @@ export const dashboardService = {
     // Public sheets
     // --------------------------------------------------------
 
-    const [colleges, sports] = await Promise.all([
-      getSheet<any>("Colleges"),
-      getSheet<any>("Sports"),
-    ]);
+    const [collegesResult, sportsResult] =
+      await Promise.all([
+        getSheet<any>("Colleges"),
+        getSheet<any>("Sports"),
+      ]);
+
+    // --------------------------------------------------------
+    // Normalize public data
+    // --------------------------------------------------------
+
+    const colleges =
+      ensureArray(collegesResult);
+
+    const sports =
+      ensureArray(sportsResult);
 
     // --------------------------------------------------------
     // Protected sheets
-    // --------------------------------------------------------
-    // These require an authenticated admin session.
-    // Do not call getSheet() for them.
     // --------------------------------------------------------
 
     let players: any[] = [];
@@ -62,15 +70,24 @@ export const dashboardService = {
     let notices: any[] = [];
 
     if (token) {
-      [
-        players,
-        schedules,
-        notices,
+      const [
+        playersResult,
+        schedulesResult,
+        noticesResult,
       ] = await Promise.all([
         adminGet<any>("Players"),
         adminGet<any>("Schedules"),
         adminGet<any>("Notices"),
       ]);
+
+      players =
+        ensureArray(playersResult);
+
+      schedules =
+        ensureArray(schedulesResult);
+
+      notices =
+        ensureArray(noticesResult);
     }
 
     // --------------------------------------------------------
@@ -85,26 +102,58 @@ export const dashboardService = {
       "JCSAM DASHBOARD - GOOGLE SHEETS DATA"
     );
 
-    console.log("Colleges:", colleges);
-    console.log("Players:", players);
-    console.log("Schedules:", schedules);
-    console.log("Notices:", notices);
-    console.log("Sports:", sports);
+    console.log(
+      "Colleges:",
+      colleges,
+      "Count:",
+      colleges.length
+    );
+
+    console.log(
+      "Players:",
+      players,
+      "Count:",
+      players.length
+    );
+
+    console.log(
+      "Schedules:",
+      schedules,
+      "Count:",
+      schedules.length
+    );
+
+    console.log(
+      "Notices:",
+      notices,
+      "Count:",
+      notices.length
+    );
+
+    console.log(
+      "Sports:",
+      sports,
+      "Count:",
+      sports.length
+    );
 
     console.log(
       "========================================"
     );
 
     // --------------------------------------------------------
-    // Stats
+    // IMPORTANT
+    //
+    // Dashboard.tsx expects these values to be ARRAYS.
+    // Do NOT return .length here.
     // --------------------------------------------------------
 
     return {
-      colleges: countRecords(colleges),
-      players: countRecords(players),
-      schedules: countRecords(schedules),
-      notices: countRecords(notices),
-      sports: countRecords(sports),
+      colleges,
+      players,
+      schedules,
+      notices,
+      sports,
     };
   },
 };
