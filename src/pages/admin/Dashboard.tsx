@@ -29,14 +29,42 @@ const COLORS = [
   "hsl(0,84%,60%)",
 ];
 
-const asArray = <T,>(value: unknown): T[] => {
-  return Array.isArray(value) ? value : [];
-};
+// ============================================================
+// SAFE ARRAY HELPER
+// ============================================================
+
+function safeArray<T = any>(value: any): T[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value && Array.isArray(value.data)) {
+    return value.data;
+  }
+
+  if (value && Array.isArray(value.records)) {
+    return value.records;
+  }
+
+  if (value && Array.isArray(value.rows)) {
+    return value.rows;
+  }
+
+  return [];
+}
+
+// ============================================================
+// ADMIN DASHBOARD
+// ============================================================
 
 const AdminDashboard = () => {
-  const { data: stats, isLoading } = useDashboardStats();
   const {
-    data: allPlayers = [],
+    data: stats,
+    isLoading,
+  } = useDashboardStats();
+
+  const {
+    data: playersResult,
     isLoading: playersLoading,
   } = usePlayers();
 
@@ -48,110 +76,196 @@ const AdminDashboard = () => {
     );
   }
 
-  /*
-   * Google Apps Script can occasionally return an object instead
-   * of an array. Never allow that to crash the dashboard.
-   */
-  const colleges = asArray<any>(stats?.colleges);
-  const players = asArray<any>(stats?.players);
-  const schedules = asArray<any>(stats?.schedules);
-  const notices = asArray<any>(stats?.notices);
-  const sports = asArray<any>(stats?.sports);
-  const safeAllPlayers = asArray<any>(allPlayers);
+  // ==========================================================
+  // ALWAYS CONVERT API DATA TO ARRAYS
+  // ==========================================================
 
-  const upcomingCount = schedules.filter(
-    (s: any) =>
-      String(s?.status ?? "").toLowerCase() === "upcoming"
-  ).length;
+  const colleges = safeArray(
+    stats?.colleges
+  );
 
-  const sportChartData = sports
-    .slice(0, 8)
-    .map((sport: any) => {
-      const sportName = String(
-        sport?.name ??
-          sport?.sport_name ??
-          sport?.title ??
-          "Unknown"
-      );
+  const players = safeArray(
+    stats?.players
+  );
 
-      const sportId = String(
-        sport?.id ??
+  const schedules = safeArray(
+    stats?.schedules
+  );
+
+  const notices = safeArray(
+    stats?.notices
+  );
+
+  const sports = safeArray(
+    stats?.sports
+  );
+
+  const allPlayers = safeArray(
+    playersResult
+  );
+
+  // ==========================================================
+  // DEBUG
+  // ==========================================================
+
+  console.log(
+    "ADMIN DASHBOARD NORMALIZED DATA"
+  );
+
+  console.log(
+    "colleges:",
+    Array.isArray(colleges),
+    colleges.length
+  );
+
+  console.log(
+    "players:",
+    Array.isArray(players),
+    players.length
+  );
+
+  console.log(
+    "allPlayers:",
+    Array.isArray(allPlayers),
+    allPlayers.length
+  );
+
+  console.log(
+    "schedules:",
+    Array.isArray(schedules),
+    schedules.length
+  );
+
+  console.log(
+    "notices:",
+    Array.isArray(notices),
+    notices.length
+  );
+
+  console.log(
+    "sports:",
+    Array.isArray(sports),
+    sports.length
+  );
+
+  // ==========================================================
+  // UPCOMING MATCHES
+  // ==========================================================
+
+  const upcomingCount =
+    schedules.filter(
+      (s: any) =>
+        String(s?.status || "")
+          .toLowerCase() === "upcoming"
+    ).length;
+
+  // ==========================================================
+  // PLAYERS BY SPORT
+  // ==========================================================
+
+  const sportChartData =
+    sports
+      .slice(0, 8)
+      .map((sport: any) => {
+        const sportId =
+          sport?.id ??
           sport?.sport_id ??
-          sport?.sportId ??
-          ""
-      );
+          sport?.sportId;
 
-      return {
-        name:
-          sportName.length > 8
-            ? sportName.slice(0, 8) + "…"
-            : sportName,
-
-        players: players.filter((p: any) => {
-          const playerSportId = String(
-            p?.sport_id ??
-              p?.sportId ??
-              p?.sport ??
-              ""
+        const sportName =
+          String(
+            sport?.name ??
+            sport?.sport_name ??
+            "Unknown"
           );
 
-          return (
-            sportId !== "" &&
-            playerSportId === sportId
-          );
-        }).length,
-      };
-    });
+        return {
+          name:
+            sportName.length > 8
+              ? sportName.slice(0, 8) + "…"
+              : sportName,
 
-  const upcomingMatches = schedules.filter(
-    (s: any) =>
-      String(s?.status ?? "").toLowerCase() ===
-      "upcoming"
-  ).length;
+          players:
+            players.filter(
+              (p: any) => {
+                const playerSportId =
+                  p?.sport_id ??
+                  p?.sportId;
 
-  const completedMatches = schedules.filter(
-    (s: any) =>
-      String(s?.status ?? "").toLowerCase() ===
-      "completed"
-  ).length;
+                return (
+                  String(playerSportId) ===
+                  String(sportId)
+                );
+              }
+            ).length,
+        };
+      });
 
-  const cancelledMatches = schedules.filter(
-    (s: any) =>
-      String(s?.status ?? "").toLowerCase() ===
-      "cancelled"
-  ).length;
+  // ==========================================================
+  // MATCH STATUS
+  // ==========================================================
 
   const statusData = [
     {
       name: "Upcoming",
-      value: upcomingMatches,
+      value:
+        schedules.filter(
+          (s: any) =>
+            String(s?.status || "")
+              .toLowerCase() === "upcoming"
+        ).length,
     },
+
     {
       name: "Completed",
-      value: completedMatches,
+      value:
+        schedules.filter(
+          (s: any) =>
+            String(s?.status || "")
+              .toLowerCase() === "completed"
+        ).length,
     },
+
     {
       name: "Cancelled",
-      value: cancelledMatches,
+      value:
+        schedules.filter(
+          (s: any) =>
+            String(s?.status || "")
+              .toLowerCase() === "cancelled"
+        ).length,
     },
-  ].filter((d) => d.value > 0);
-
-  const pendingColleges = colleges.filter(
-    (c: any) =>
-      String(c?.status ?? "").toLowerCase() ===
-      "pending"
+  ].filter(
+    (d) => d.value > 0
   );
 
-  const pendingPlayers = safeAllPlayers.filter(
-    (p: any) =>
-      String(p?.status ?? "").toLowerCase() ===
-      "pending"
-  );
+  // ==========================================================
+  // PENDING REGISTRATIONS
+  // ==========================================================
+
+  const pendingColleges =
+    colleges.filter(
+      (c: any) =>
+        String(c?.status || "")
+          .toLowerCase() === "pending"
+    );
+
+  const pendingPlayers =
+    allPlayers.filter(
+      (p: any) =>
+        String(p?.status || "")
+          .toLowerCase() === "pending"
+    );
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
     <div className="space-y-6">
 
       {/* HEADER */}
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -161,7 +275,10 @@ const AdminDashboard = () => {
         </h2>
       </motion.div>
 
-      {/* STATS */}
+      {/* ======================================================
+          STAT CARDS
+          ====================================================== */}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
         <StatCounter
@@ -201,10 +318,14 @@ const AdminDashboard = () => {
 
       </div>
 
-      {/* CHARTS */}
+      {/* ======================================================
+          CHARTS
+          ====================================================== */}
+
       <div className="grid md:grid-cols-2 gap-6">
 
         {/* PLAYERS BY SPORT */}
+
         <div className="admin-card">
 
           <h3 className="font-display font-bold text-lg mb-4">
@@ -216,11 +337,15 @@ const AdminDashboard = () => {
               width="100%"
               height={250}
             >
-              <BarChart data={sportChartData}>
+              <BarChart
+                data={sportChartData}
+              >
 
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11 }}
+                  tick={{
+                    fontSize: 11,
+                  }}
                 />
 
                 <YAxis />
@@ -249,6 +374,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* MATCH STATUS */}
+
         <div className="admin-card">
 
           <h3 className="font-display font-bold text-lg mb-4">
@@ -260,6 +386,7 @@ const AdminDashboard = () => {
               width="100%"
               height={250}
             >
+
               <PieChart>
 
                 <Pie
@@ -277,6 +404,7 @@ const AdminDashboard = () => {
                     `${name}: ${value}`
                   }
                 >
+
                   {statusData.map(
                     (_, i) => (
                       <Cell
@@ -290,11 +418,13 @@ const AdminDashboard = () => {
                       />
                     )
                   )}
+
                 </Pie>
 
                 <Tooltip />
 
               </PieChart>
+
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
@@ -306,7 +436,10 @@ const AdminDashboard = () => {
 
       </div>
 
-      {/* RECENT MATCHES */}
+      {/* ======================================================
+          RECENT SCHEDULED MATCHES
+          ====================================================== */}
+
       <div className="admin-card">
 
         <h3 className="font-display font-bold text-lg mb-4">
@@ -318,6 +451,7 @@ const AdminDashboard = () => {
           <table className="w-full text-sm">
 
             <thead>
+
               <tr className="border-b border-border">
 
                 <th className="text-left px-4 py-2 text-muted-foreground">
@@ -333,82 +467,73 @@ const AdminDashboard = () => {
                 </th>
 
               </tr>
+
             </thead>
 
             <tbody>
 
               {schedules
                 .slice(0, 5)
-                .map((s: any) => {
+                .map((s: any) => (
 
-                  const status =
-                    String(
-                      s?.status ?? ""
-                    ).toLowerCase();
+                  <tr
+                    key={
+                      s?.id ??
+                      s?.schedule_id ??
+                      Math.random()
+                    }
+                    className="border-b border-border/50"
+                  >
 
-                  return (
-                    <tr
-                      key={
-                        s?.id ??
-                        s?.schedule_id ??
-                        Math.random()
-                      }
-                      className="border-b border-border/50"
-                    >
+                    <td className="px-4 py-3">
+                      {s?.title ??
+                        s?.name ??
+                        "-"}
+                    </td>
 
-                      <td className="px-4 py-3">
-                        {s?.title ??
-                          s?.event ??
+                    <td className="px-4 py-3">
+                      {s?.date ?? "-"}
+                    </td>
+
+                    <td className="px-4 py-3">
+
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold ${
+                          s?.status ===
+                          "upcoming"
+                            ? "bg-primary/10 text-primary"
+                            : s?.status ===
+                              "completed"
+                            ? "bg-success/10 text-success"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        {s?.status ??
                           "-"}
-                      </td>
+                      </span>
 
-                      <td className="px-4 py-3">
-                        {s?.date ??
-                          s?.match_date ??
-                          "-"}
-                      </td>
+                    </td>
 
-                      <td className="px-4 py-3">
+                  </tr>
 
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-bold ${
-                            status ===
-                            "upcoming"
-                              ? "bg-primary/10 text-primary"
-                              : status ===
-                                "completed"
-                              ? "bg-success/10 text-success"
-                              : "bg-destructive/10 text-destructive"
-                          }`}
-                        >
-                          {status ||
-                            "unknown"}
-                        </span>
-
-                      </td>
-
-                    </tr>
-                  );
-                })}
+                ))}
 
             </tbody>
 
           </table>
 
-          {schedules.length === 0 && (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              No scheduled matches yet.
-            </p>
-          )}
-
         </div>
 
       </div>
 
-      {/* PENDING REGISTRATIONS */}
+      {/* ======================================================
+          PENDING REGISTRATIONS
+          ====================================================== */}
+
       <div className="grid md:grid-cols-2 gap-6">
 
-        {/* COLLEGES */}
+        {/* PENDING COLLEGES */}
+
         <div className="admin-card">
 
           <div className="flex items-center gap-2 mb-4">
@@ -421,13 +546,15 @@ const AdminDashboard = () => {
 
           </div>
 
-          {pendingColleges.length > 0 ? (
+          {pendingColleges.length >
+          0 ? (
 
             <div className="overflow-x-auto">
 
               <table className="w-full text-sm">
 
                 <thead>
+
                   <tr className="border-b border-border">
 
                     <th className="text-left px-4 py-2 text-muted-foreground">
@@ -439,17 +566,18 @@ const AdminDashboard = () => {
                     </th>
 
                   </tr>
+
                 </thead>
 
                 <tbody>
 
                   {pendingColleges.map(
                     (c: any) => (
+
                       <tr
                         key={
                           c?.id ??
                           c?.college_id ??
-                          c?.collegeId ??
                           Math.random()
                         }
                         className="border-b border-border/50"
@@ -462,10 +590,11 @@ const AdminDashboard = () => {
                         </td>
 
                         <td className="px-4 py-3">
-                          {c?.email || "-"}
+                          {c?.email ?? "-"}
                         </td>
 
                       </tr>
+
                     )
                   )}
 
@@ -485,7 +614,8 @@ const AdminDashboard = () => {
 
         </div>
 
-        {/* PLAYERS */}
+        {/* PENDING PLAYERS */}
+
         <div className="admin-card">
 
           <div className="flex items-center gap-2 mb-4">
@@ -498,13 +628,15 @@ const AdminDashboard = () => {
 
           </div>
 
-          {pendingPlayers.length > 0 ? (
+          {pendingPlayers.length >
+          0 ? (
 
             <div className="overflow-x-auto">
 
               <table className="w-full text-sm">
 
                 <thead>
+
                   <tr className="border-b border-border">
 
                     <th className="text-left px-4 py-2 text-muted-foreground">
@@ -520,17 +652,18 @@ const AdminDashboard = () => {
                     </th>
 
                   </tr>
+
                 </thead>
 
                 <tbody>
 
                   {pendingPlayers.map(
                     (p: any) => (
+
                       <tr
                         key={
                           p?.id ??
                           p?.player_id ??
-                          p?.playerId ??
                           Math.random()
                         }
                         className="border-b border-border/50"
@@ -543,7 +676,7 @@ const AdminDashboard = () => {
                         </td>
 
                         <td className="px-4 py-3">
-                          {p?.email || "-"}
+                          {p?.email ?? "-"}
                         </td>
 
                         <td className="px-4 py-3">
@@ -554,6 +687,7 @@ const AdminDashboard = () => {
                         </td>
 
                       </tr>
+
                     )
                   )}
 
