@@ -54,101 +54,35 @@ const ManageGallery = () => {
   ) as any;
 
   // ============================================================
-  // FILE -> BASE64
-  // ============================================================
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      // Make absolutely sure we received a real File/Blob.
-      if (!(file instanceof Blob)) {
-        reject(new Error("Selected file is not a valid image file."));
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const result = reader.result;
-
-        if (typeof result !== "string") {
-          reject(new Error("Failed to convert image to Base64."));
-          return;
-        }
-
-        const commaIndex = result.indexOf(",");
-
-        const base64 =
-          commaIndex >= 0
-            ? result.substring(commaIndex + 1)
-            : result;
-
-        resolve(base64);
-      };
-
-      reader.onerror = () => {
-        reject(reader.error || new Error("Failed to read image."));
-      };
-
-      reader.onabort = () => {
-        reject(new Error("Image reading was aborted."));
-      };
-
-      reader.readAsDataURL(file);
-    });
-  };
-
-  // ============================================================
   // MULTI IMAGE UPLOAD
   // ============================================================
 
   const handleMultiUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const input = e.currentTarget;
-    const fileList = input.files;
+    const files = e.target.files;
 
-    if (!fileList || fileList.length === 0) {
+    if (!files || files.length === 0) {
       return;
     }
 
-    // Sport must be selected before uploading.
     if (!selectedSport) {
       toast.error("Please select a sport first.");
-      input.value = "";
       return;
     }
 
-    // Check admin session.
-    const token = localStorage.getItem("jcsam_admin_token") || "";
-
-    if (!token) {
-      toast.error("Admin session expired. Please login again.");
-      input.value = "";
-      return;
-    }
-
-    // Convert FileList to a real array immediately.
-    const files: File[] = Array.from(fileList).filter(
-      (file): file is File =>
-        file instanceof File && file instanceof Blob
+    console.log(
+      "Gallery files selected:",
+      Array.from(files)
     );
 
-    if (files.length === 0) {
-      toast.error("No valid image files selected.");
-      input.value = "";
-      return;
-    }
-
-    // Debug information.
-    console.log("Gallery files selected:", files);
     console.log(
       "Gallery file details:",
-      files.map((file) => ({
+      Array.from(files).map((file) => ({
         name: file.name,
         type: file.type,
         size: file.size,
         isFile: file instanceof File,
-        isBlob: file instanceof Blob,
       }))
     );
 
@@ -158,46 +92,42 @@ const ManageGallery = () => {
     let failedCount = 0;
 
     try {
-      for (const file of files) {
+      for (const file of Array.from(files)) {
         try {
           // ------------------------------------------------------
-          // VALIDATE FILE SIZE
+          // VALIDATE FILE
           // ------------------------------------------------------
+
+          if (!(file instanceof File)) {
+            throw new Error("Selected item is not a valid File.");
+          }
 
           if (file.size > 10 * 1024 * 1024) {
             toast.error(
               `${file.name} is too large. Maximum size is 10MB.`
             );
-
             failedCount++;
             continue;
           }
 
-          // ------------------------------------------------------
-          // VALIDATE FILE TYPE
-          // ------------------------------------------------------
-
-          if (!file.type || !file.type.startsWith("image/")) {
+          if (!file.type.startsWith("image/")) {
             toast.error(
               `${file.name} is not a valid image.`
             );
-
             failedCount++;
             continue;
           }
 
           // ------------------------------------------------------
-          // CONVERT FILE TO BASE64
-          // ------------------------------------------------------
-
-          const base64 = await fileToBase64(file);
-
-          if (!base64) {
-            throw new Error("Image conversion returned empty data.");
-          }
-
-          // ------------------------------------------------------
-          // UPLOAD TO GOOGLE DRIVE
+          // UPLOAD ACTUAL FILE
+          //
+          // IMPORTANT:
+          // api.ts uploadImage() expects:
+          //
+          // uploadImage(file, bucket)
+          //
+          // DO NOT convert the File to base64 here.
+          // api.ts handles that internally.
           // ------------------------------------------------------
 
           console.log(
@@ -205,11 +135,8 @@ const ManageGallery = () => {
           );
 
           const uploadResult = await uploadImage(
-            base64,
-            file.name,
-            file.type,
-            "gallery",
-            token
+            file,
+            "gallery"
           );
 
           console.log(
@@ -224,7 +151,8 @@ const ManageGallery = () => {
           ) {
             throw new Error(
               uploadResult?.error ||
-                "Image upload failed."
+                uploadResult?.message ||
+                "Image upload failed"
             );
           }
 
@@ -244,12 +172,12 @@ const ManageGallery = () => {
             date: new Date()
               .toISOString()
               .split("T")[0],
-          });
+          } as any);
 
           successCount++;
 
           console.log(
-            `Successfully uploaded ${file.name}`
+            `Gallery image saved successfully: ${file.name}`
           );
         } catch (error: any) {
           console.error(
@@ -260,7 +188,9 @@ const ManageGallery = () => {
           failedCount++;
 
           toast.error(
-            `Failed to upload ${file.name}`
+            `Failed to upload ${file.name}: ${
+              error?.message || "Unknown error"
+            }`
           );
         }
       }
@@ -284,18 +214,12 @@ const ManageGallery = () => {
           } failed to upload.`
         );
       }
-    } catch (error: any) {
-      console.error("Gallery upload process failed:", error);
-
-      toast.error(
-        error?.message ||
-          "Gallery upload process failed."
-      );
     } finally {
       setUploading(false);
 
-      // Reset input so the same image can be selected again.
-      input.value = "";
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
     }
   };
 
@@ -322,18 +246,19 @@ const ManageGallery = () => {
   // ============================================================
 
   const selectAll = () => {
-    if (currentImages.length === 0) {
-      return;
-    }
-
-    if (selectedIds.size === currentImages.length) {
+    if (
+      selectedIds.size === currentImages.length &&
+      currentImages.length > 0
+    ) {
       setSelectedIds(new Set());
       return;
     }
 
     setSelectedIds(
       new Set(
-        currentImages.map((image: any) => String(image.id))
+        currentImages.map((image: any) =>
+          String(image.id)
+        )
       )
     );
   };
@@ -351,7 +276,7 @@ const ManageGallery = () => {
     const count = ids.length;
 
     const confirmed = window.confirm(
-      `Are you sure you want to permanently delete ${count} selected image${
+      `Are you sure you want to delete ${count} selected image${
         count === 1 ? "" : "s"
       }?`
     );
@@ -371,7 +296,7 @@ const ManageGallery = () => {
           successCount++;
         } catch (error) {
           console.error(
-            `Failed to delete gallery image ${id}:`,
+            "Bulk delete error:",
             error
           );
         }
@@ -414,9 +339,9 @@ const ManageGallery = () => {
     ) as any;
 
     const confirmed = window.confirm(
-      `Are you sure you want to permanently delete ${
+      `Delete ${
         image?.caption || "this image"
-      }?`
+      } permanently?`
     );
 
     if (!confirmed) {
@@ -432,12 +357,13 @@ const ManageGallery = () => {
         return next;
       });
 
-      toast.success("Image deleted successfully.");
+      toast.success(
+        "Image deleted successfully"
+      );
     } catch (error: any) {
-      console.error("Delete gallery image error:", error);
-
       toast.error(
-        error?.message || "Failed to delete image."
+        error?.message ||
+          "Failed to delete image"
       );
     }
   };
@@ -459,24 +385,16 @@ const ManageGallery = () => {
   // ============================================================
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">
-          Manage Gallery
-        </h1>
-
-        <p className="text-muted-foreground mt-1">
-          Organize and upload photos for each sport.
-        </p>
-      </div>
+    <div>
+      <h1 className="text-2xl font-display font-bold text-foreground mb-6">
+        Manage Gallery
+      </h1>
 
       {selectedSport ? (
         // ======================================================
         // SPORT GALLERY
         // ======================================================
-
         <div>
-          {/* HEADER */}
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <button
               onClick={() => {
@@ -502,11 +420,14 @@ const ManageGallery = () => {
           </div>
 
           {/* ACTION BAR */}
+
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <button
-              onClick={() => inputRef.current?.click()}
+              onClick={() =>
+                inputRef.current?.click()
+              }
               disabled={uploading}
-              className="btn-primary flex items-center gap-2 text-sm disabled:opacity-50"
+              className="btn-primary flex items-center gap-2 text-sm"
             >
               {uploading ? (
                 <FiLoader className="animate-spin" />
@@ -532,11 +453,10 @@ const ManageGallery = () => {
               <>
                 <button
                   onClick={selectAll}
-                  disabled={uploading || deleting}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
                 >
                   {selectedIds.size ===
-                  currentImages.length ? (
+                    currentImages.length ? (
                     <FiCheckSquare />
                   ) : (
                     <FiSquare />
@@ -551,8 +471,8 @@ const ManageGallery = () => {
                 {selectedIds.size > 0 && (
                   <button
                     onClick={handleBulkDelete}
-                    disabled={deleting || uploading}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                    disabled={deleting}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm hover:bg-destructive/90 transition-colors"
                   >
                     {deleting ? (
                       <FiLoader className="animate-spin" />
@@ -560,122 +480,113 @@ const ManageGallery = () => {
                       <FiTrash2 />
                     )}
 
-                    Delete {selectedIds.size} Selected
+                    Delete {selectedIds.size}{" "}
+                    Selected
                   </button>
                 )}
               </>
             )}
           </div>
 
-          {/* UPLOAD INFORMATION */}
-          {uploading && (
-            <div className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <div className="flex items-center gap-3">
-                <FiLoader className="animate-spin text-primary" />
-
-                <div>
-                  <p className="font-medium text-foreground">
-                    Uploading images...
-                  </p>
-
-                  <p className="text-sm text-muted-foreground">
-                    Please keep this page open until the
-                    upload is complete.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* IMAGE GRID */}
+
           {currentImages.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <AnimatePresence>
-                {currentImages.map((img: any) => {
-                  const imageId = String(img.id);
-                  const isSelected =
-                    selectedIds.has(imageId);
+                {currentImages.map(
+                  (img: any) => {
+                    const imageId = String(
+                      img.id
+                    );
 
-                  return (
-                    <motion.div
-                      key={imageId}
-                      initial={{
-                        opacity: 0,
-                        scale: 0.9,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        scale: 1,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        scale: 0.9,
-                      }}
-                      className={`relative group rounded-xl overflow-hidden border-2 aspect-square cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-primary ring-2 ring-primary/30"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() =>
-                        toggleSelect(imageId)
-                      }
-                    >
-                      {/* IMAGE */}
-                      <img
-                        src={img.url}
-                        alt={
-                          img.caption ||
-                          "Gallery image"
-                        }
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                    const isSelected =
+                      selectedIds.has(
+                        imageId
+                      );
 
-                      {/* CHECKBOX */}
-                      <div className="absolute top-2 left-2">
-                        <div
-                          className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
-                            isSelected
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-foreground/30 text-white opacity-0 group-hover:opacity-100"
-                          }`}
-                        >
-                          {isSelected ? (
-                            <FiCheckSquare className="w-4 h-4" />
-                          ) : (
-                            <FiSquare className="w-4 h-4" />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* CAPTION */}
-                      {img.caption && (
-                        <div className="absolute bottom-0 inset-x-0 bg-foreground/60 text-white text-xs px-2 py-1 truncate">
-                          {img.caption}
-                        </div>
-                      )}
-
-                      {/* DELETE */}
-                      <button
-                        onClick={(e) =>
-                          handleDelete(
-                            e,
+                    return (
+                      <motion.div
+                        key={imageId}
+                        initial={{
+                          opacity: 0,
+                          scale: 0.9,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          scale: 1,
+                        }}
+                        exit={{
+                          opacity: 0,
+                          scale: 0.9,
+                        }}
+                        className={`relative group rounded-xl overflow-hidden border-2 aspect-square cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-primary ring-2 ring-primary/30"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        onClick={() =>
+                          toggleSelect(
                             imageId
                           )
                         }
-                        disabled={
-                          deleteItem.isPending ||
-                          deleting ||
-                          uploading
-                        }
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                        title="Delete image"
                       >
-                        <FiTrash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </motion.div>
-                  );
-                })}
+                        <img
+                          src={img.url}
+                          alt={
+                            img.caption ||
+                            "Gallery image"
+                          }
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+
+                        {/* CHECKBOX */}
+
+                        <div className="absolute top-2 left-2">
+                          <div
+                            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-foreground/30 text-white opacity-0 group-hover:opacity-100"
+                            }`}
+                          >
+                            {isSelected ? (
+                              <FiCheckSquare className="w-4 h-4" />
+                            ) : (
+                              <FiSquare className="w-4 h-4" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* CAPTION */}
+
+                        {img.caption && (
+                          <div className="absolute bottom-0 inset-x-0 bg-foreground/60 text-white text-xs px-2 py-1 truncate">
+                            {img.caption}
+                          </div>
+                        )}
+
+                        {/* DELETE */}
+
+                        <button
+                          onClick={(e) =>
+                            handleDelete(
+                              e,
+                              imageId
+                            )
+                          }
+                          disabled={
+                            deleteItem.isPending
+                          }
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Delete image"
+                        >
+                          <FiTrash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                    );
+                  }
+                )}
               </AnimatePresence>
             </div>
           ) : (
@@ -686,9 +597,9 @@ const ManageGallery = () => {
                 No images yet
               </p>
 
-              <p className="text-sm text-center">
-                Click "Upload Images" to add photos
-                for this sport.
+              <p className="text-sm">
+                Click "Upload Images" to add
+                photos for this sport
               </p>
             </div>
           )}
@@ -697,17 +608,19 @@ const ManageGallery = () => {
         // ======================================================
         // SPORT FOLDERS
         // ======================================================
-
         <div>
           <p className="text-muted-foreground mb-6">
-            Select a sport to manage its gallery
-            images.
+            Select a sport to manage its
+            gallery images.
           </p>
 
           {sportGroups.length > 0 ? (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {sportGroups.map(
-                (sport: any, index: number) => (
+                (
+                  sport: any,
+                  index: number
+                ) => (
                   <motion.div
                     key={sport.id}
                     initial={{
@@ -719,7 +632,8 @@ const ManageGallery = () => {
                       y: 0,
                     }}
                     transition={{
-                      delay: index * 0.04,
+                      delay:
+                        index * 0.04,
                     }}
                     whileHover={{
                       y: -4,
@@ -732,42 +646,50 @@ const ManageGallery = () => {
                     }
                     className="admin-card cursor-pointer group text-center"
                   >
-                    {/* SPORT ICON */}
                     <div className="text-4xl mb-3">
                       {sport.icon}
                     </div>
 
-                    {/* SPORT NAME */}
                     <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                       {sport.name}
                     </h3>
 
-                    {/* IMAGE COUNT */}
                     <p className="text-sm text-muted-foreground mt-1">
                       {sport.images.length}{" "}
-                      {sport.images.length === 1
+                      {sport.images.length ===
+                      1
                         ? "photo"
                         : "photos"}
                     </p>
 
-                    {/* PREVIEW IMAGES */}
-                    {sport.images.length > 0 && (
+                    {sport.images.length >
+                      0 && (
                       <div className="flex justify-center gap-1 mt-3">
                         {sport.images
                           .slice(0, 3)
-                          .map((img: any) => (
-                            <img
-                              key={img.id}
-                              src={img.url}
-                              alt=""
-                              className="w-8 h-8 rounded object-cover"
-                            />
-                          ))}
+                          .map(
+                            (
+                              img: any
+                            ) => (
+                              <img
+                                key={
+                                  img.id
+                                }
+                                src={
+                                  img.url
+                                }
+                                alt=""
+                                className="w-8 h-8 rounded object-cover"
+                              />
+                            )
+                          )}
 
-                        {sport.images.length > 3 && (
+                        {sport.images
+                          .length > 3 && (
                           <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
                             +
-                            {sport.images.length -
+                            {sport.images
+                              .length -
                               3}
                           </div>
                         )}
@@ -786,8 +708,8 @@ const ManageGallery = () => {
               </p>
 
               <p className="text-sm">
-                Add sports first before managing
-                gallery images.
+                Add sports first before
+                managing gallery images.
               </p>
             </div>
           )}
