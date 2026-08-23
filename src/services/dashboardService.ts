@@ -10,14 +10,16 @@ import {
 } from "@/services/api";
 
 // ============================================================
-// HELPERS
+// NORMALIZE API RESPONSE
 // ============================================================
 
-function ensureArray<T = any>(value: any): T[] {
+function normalizeArray(value: any): any[] {
+  // Already an array
   if (Array.isArray(value)) {
     return value;
   }
 
+  // Common API wrapper formats
   if (value && Array.isArray(value.data)) {
     return value.data;
   }
@@ -30,6 +32,7 @@ function ensureArray<T = any>(value: any): T[] {
     return value.records;
   }
 
+  // Never allow Dashboard to receive an object/null
   return [];
 }
 
@@ -45,7 +48,7 @@ export const dashboardService = {
     // Public sheets
     // --------------------------------------------------------
 
-    const [collegesResult, sportsResult] =
+    const [collegesResponse, sportsResponse] =
       await Promise.all([
         getSheet<any>("Colleges"),
         getSheet<any>("Sports"),
@@ -55,11 +58,8 @@ export const dashboardService = {
     // Normalize public data
     // --------------------------------------------------------
 
-    const colleges =
-      ensureArray(collegesResult);
-
-    const sports =
-      ensureArray(sportsResult);
+    const colleges = normalizeArray(collegesResponse);
+    const sports = normalizeArray(sportsResponse);
 
     // --------------------------------------------------------
     // Protected sheets
@@ -71,27 +71,22 @@ export const dashboardService = {
 
     if (token) {
       const [
-        playersResult,
-        schedulesResult,
-        noticesResult,
+        playersResponse,
+        schedulesResponse,
+        noticesResponse,
       ] = await Promise.all([
         adminGet<any>("Players"),
         adminGet<any>("Schedules"),
         adminGet<any>("Notices"),
       ]);
 
-      players =
-        ensureArray(playersResult);
-
-      schedules =
-        ensureArray(schedulesResult);
-
-      notices =
-        ensureArray(noticesResult);
+      players = normalizeArray(playersResponse);
+      schedules = normalizeArray(schedulesResponse);
+      notices = normalizeArray(noticesResponse);
     }
 
     // --------------------------------------------------------
-    // Debug
+    // DEBUG
     // --------------------------------------------------------
 
     console.log(
@@ -142,10 +137,14 @@ export const dashboardService = {
     );
 
     // --------------------------------------------------------
-    // IMPORTANT
+    // IMPORTANT:
+    // Return ARRAYS, not counts.
     //
-    // Dashboard.tsx expects these values to be ARRAYS.
-    // Do NOT return .length here.
+    // Dashboard.tsx needs to use:
+    // players.filter(...)
+    // schedules.filter(...)
+    // colleges.filter(...)
+    // etc.
     // --------------------------------------------------------
 
     return {
