@@ -1,217 +1,467 @@
-
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
-import { FiLock, FiMail, FiAlertCircle, FiCheckCircle, FiArrowLeft } from "react-icons/fi";
+import {
+  FiLock,
+  FiMail,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiArrowLeft,
+  FiEye,
+  FiEyeOff,
+} from "react-icons/fi";
 import { toast } from "sonner";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"login" | "forgot">("login");
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotSent, setForgotSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { login, resetPassword, isAuthenticated, user, logout, signInWithGoogle } = useAuth();
+
+  const [tab, setTab] =
+    useState<"login" | "forgot">("login");
+
+  const [forgotEmail, setForgotEmail] =
+    useState("");
+
+  const [forgotSent, setForgotSent] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const {
+    signIn,
+    isAuthenticated,
+    user,
+  } = useAuth();
+
   const navigate = useNavigate();
+
+  // ============================================================
+  // REDIRECT IF ALREADY AUTHENTICATED
+  // ============================================================
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate("/admin");
+      navigate("/admin", {
+        replace: true,
+      });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [
+    isAuthenticated,
+    user,
+    navigate,
+  ]);
 
   if (isAuthenticated) {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // ============================================================
+  // EMAIL/PASSWORD LOGIN
+  // ============================================================
+
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
+
     setError("");
     setLoading(true);
-    const result = await login(email, password);
-    setLoading(false);
-    if (result.success) {
-      navigate("/admin");
-    } else {
-      setError(result.error || "Invalid email or password. Please try again.");
+
+    try {
+      const result = await signIn(
+        email.trim(),
+        password
+      );
+
+      if (result.success) {
+        toast.success(
+          "Login successful!"
+        );
+
+        navigate("/admin", {
+          replace: true,
+        });
+      } else {
+        setError(
+          result.error ||
+            "Invalid email or password. Please try again."
+        );
+      }
+    } catch (err: any) {
+      setError(
+        err?.message ||
+          "Login failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  // ============================================================
+  // FORGOT PASSWORD
+  // ============================================================
+
+  const handleForgot = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
+
     setError("");
-    setLoading(true);
-    const { error } = await signInWithGoogle();
-    setLoading(false);
-    if (error) {
-      setError("Google sign-in failed. Please try again.");
-      toast.error("Google sign-in failed");
-    }
+
+    /*
+     * Google Apps Script authentication currently
+     * does not provide a password-reset endpoint.
+     *
+     * We therefore don't pretend that an email
+     * was actually sent.
+     */
+
+    toast.info(
+      "Password reset is not currently available. Please contact the JCSAM administrator."
+    );
   };
 
-  const handleForgot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const ok = await resetPassword(forgotEmail);
-    setLoading(false);
-    if (ok) {
-      setForgotSent(true);
-      toast.success("Password reset email sent!");
-    } else {
-      toast.error("Failed to send reset email. Check the address.");
-    }
-  };
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md px-4">
+      <motion.div
+        initial={{
+          opacity: 0,
+          scale: 0.95,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+        }}
+        transition={{
+          duration: 0.25,
+        }}
+        className="w-full max-w-md px-4"
+      >
         <div className="admin-card p-8">
+
+          {/* ================================================== */}
+          {/* HEADER */}
+          {/* ================================================== */}
+
           <div className="text-center mb-8">
+
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              initial={{
+                scale: 0,
+              }}
+              animate={{
+                scale: 1,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 15,
+              }}
               className="w-16 h-16 rounded-2xl gradient-primary mx-auto mb-4 flex items-center justify-center"
             >
               <FiLock className="w-8 h-8 text-primary-foreground" />
             </motion.div>
-            <h1 className="text-2xl font-display font-bold text-foreground">Admin Login</h1>
-            <p className="text-sm text-muted-foreground mt-1">JCSAM Management Portal</p>
-            <p className="text-xs text-muted-foreground mt-2 bg-muted/50 p-2 rounded border border-border inline-block">System temporarily unlocked for final admin setup.</p>
+
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              Admin Login
+            </h1>
+
+            <p className="text-sm text-muted-foreground mt-1">
+              JCSAM Management Portal
+            </p>
+
+            <p className="text-xs text-muted-foreground mt-2 bg-muted/50 p-2 rounded border border-border inline-block">
+              Secure administrator access
+            </p>
+
           </div>
+
+          {/* ================================================== */}
+          {/* LOGIN TAB */}
+          {/* ================================================== */}
 
           {tab === "login" ? (
             <>
+              {/* ERROR */}
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{
+                    opacity: 0,
+                    y: -10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
                   className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-center gap-2"
                 >
-                  <FiAlertCircle /> {error}
+                  <FiAlertCircle className="shrink-0" />
+
+                  <span>
+                    {error}
+                  </span>
                 </motion.div>
               )}
 
-              {/* Google Sign-In Button */}
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg border border-border bg-card hover:bg-muted transition-all duration-200 text-sm font-medium text-foreground mb-4 hover:shadow-md"
+              {/* ================================================== */}
+              {/* LOGIN FORM */}
+              {/* ================================================== */}
+
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-4"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                {loading ? "Signing in..." : "Continue with Google"}
-              </button>
 
-              <div className="relative mb-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-2 bg-card text-muted-foreground">or sign in with email</span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* EMAIL */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email Address</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Email Address
+                  </label>
+
                   <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+
+                    <FiMail
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+
                     <input
                       type="email"
                       value={email}
-                      onChange={e => setEmail(e.target.value)}
+                      onChange={(e) =>
+                        setEmail(
+                          e.target.value
+                        )
+                      }
                       required
+                      autoComplete="username"
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="juniorcollegesportsassociation@gmail.com"
                     />
+
                   </div>
                 </div>
+
+                {/* PASSWORD */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Password</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Password
+                  </label>
+
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="••••••••"
+
+                    <FiLock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     />
+
+                    <input
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
+                      value={password}
+                      onChange={(e) =>
+                        setPassword(
+                          e.target.value
+                        )
+                      }
+                      required
+                      autoComplete="current-password"
+                      className="w-full pl-10 pr-12 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="••••••••••••"
+                    />
+
+                    {/* SHOW/HIDE PASSWORD */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPassword(
+                          (prev) => !prev
+                        )
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                      title={
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <FiEyeOff className="w-5 h-5" />
+                      ) : (
+                        <FiEye className="w-5 h-5" />
+                      )}
+                    </button>
+
                   </div>
                 </div>
-                <button type="submit" disabled={loading} className="btn-primary w-full">
-                  {loading ? "Signing in..." : "Sign In"}
+
+                {/* SIGN IN */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading
+                    ? "Signing in..."
+                    : "Sign In"}
                 </button>
+
               </form>
+
+              {/* ================================================== */}
+              {/* FORGOT PASSWORD */}
+              {/* ================================================== */}
+
               <button
-                onClick={() => setTab("forgot")}
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setTab("forgot");
+                }}
                 className="w-full text-center text-sm text-primary hover:underline mt-4"
               >
                 Forgot Password?
               </button>
 
+              {/* ================================================== */}
+              {/* SIGNUP */}
+              {/* ================================================== */}
+
               <div className="mt-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   Need a final admin account?{" "}
-                  <Link to="/admin/signup" className="text-primary hover:underline font-medium">
+
+                  <Link
+                    to="/admin/signup"
+                    className="text-primary hover:underline font-medium"
+                  >
                     Sign Up
                   </Link>
                 </p>
               </div>
             </>
           ) : (
+
+            /* ================================================== */
+            /* FORGOT PASSWORD TAB */
+            /* ================================================== */
+
             <>
               {forgotSent ? (
+
                 <div className="text-center space-y-4">
+
                   <div className="w-14 h-14 rounded-full bg-success/10 mx-auto flex items-center justify-center">
                     <FiCheckCircle className="w-7 h-7 text-success" />
                   </div>
+
                   <p className="text-sm text-muted-foreground">
-                    A password reset link has been sent to <strong>{forgotEmail}</strong>. Check your inbox (and spam folder).
+                    Password reset instructions
+                    are not currently available.
                   </p>
-                  <button onClick={() => { setTab("login"); setForgotSent(false); setForgotEmail(""); }} className="btn-primary w-full text-sm">
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab("login");
+                      setForgotSent(
+                        false
+                      );
+                      setForgotEmail("");
+                    }}
+                    className="btn-primary w-full text-sm"
+                  >
                     Back to Login
                   </button>
+
                 </div>
+
               ) : (
+
                 <>
-                  <button onClick={() => setTab("login")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
-                    <FiArrowLeft /> Back to Login
+                  {/* BACK */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      setTab("login");
+                    }}
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+                  >
+                    <FiArrowLeft />
+
+                    Back to Login
                   </button>
+
                   <p className="text-sm text-muted-foreground mb-4">
-                    Enter your admin email and we'll send you a password reset link.
+                    Password reset is
+                    currently unavailable
+                    for the Google Apps Script
+                    authentication system.
                   </p>
-                  <form onSubmit={handleForgot} className="space-y-4">
+
+                  <form
+                    onSubmit={handleForgot}
+                    className="space-y-4"
+                  >
+
                     <div>
-                      <label className="block text-sm font-medium mb-1">Email Address</label>
+                      <label className="block text-sm font-medium mb-1">
+                        Admin Email
+                      </label>
+
                       <div className="relative">
-                        <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+
+                        <FiMail
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        />
+
                         <input
                           type="email"
                           value={forgotEmail}
-                          onChange={e => setForgotEmail(e.target.value)}
+                          onChange={(e) =>
+                            setForgotEmail(
+                              e.target.value
+                            )
+                          }
                           required
                           className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="juniorcollegesportsassociation@gmail.com"
                         />
+
                       </div>
                     </div>
-                    <button type="submit" disabled={loading} className="btn-primary w-full">
-                      {loading ? "Sending..." : "Send Reset Link"}
+
+                    <button
+                      type="submit"
+                      className="btn-primary w-full text-sm"
+                    >
+                      Request Password Reset
                     </button>
+
                   </form>
                 </>
               )}
             </>
           )}
+
         </div>
       </motion.div>
     </div>
