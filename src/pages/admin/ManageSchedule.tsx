@@ -1,18 +1,19 @@
 
 import CrudTable from "@/components/CrudTable";
 import { useSchedules, useCreateSchedule, useUpdateSchedule, useDeleteSchedule, useSports } from "@/hooks/useAppData";
+import type { Schedule } from "@/types/entities";
 
 const today = new Date().toISOString().split("T")[0];
 
 const ManageSchedule = () => {
-  const { data: schedules = [], isLoading } = useSchedules();
+  const { data: schedules = [] as Schedule[], isLoading } = useSchedules();
   const { data: sports = [] } = useSports();
   const createSchedule = useCreateSchedule();
   const updateSchedule = useUpdateSchedule();
   const deleteSchedule = useDeleteSchedule();
 
   return (
-    <CrudTable
+    <CrudTable<Schedule>
       title="Manage Schedule"
       data={schedules}
       loading={isLoading}

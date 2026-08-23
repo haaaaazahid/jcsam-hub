@@ -2,10 +2,11 @@
 import CrudTable from "@/components/CrudTable";
 import { ImageUploader, MultiImageUploader } from "@/components/ImageUploader";
 import { useSports, useCreateSport, useUpdateSport, useDeleteSport, useSportImages, useAddSportImage, useDeleteSportImage } from "@/hooks/useAppData";
+import type { Sport } from "@/types/entities";
 import { useState } from "react";
 
 const ManageSports = () => {
-  const { data: sports = [], isLoading } = useSports();
+  const { data: sports = [] as Sport[], isLoading } = useSports();
   const createSport = useCreateSport();
   const updateSport = useUpdateSport();
   const deleteSport = useDeleteSport();
@@ -18,7 +19,7 @@ const ManageSports = () => {
 
   return (
     <div className="space-y-6">
-      <CrudTable
+      <CrudTable<Sport>
         title="Manage Sports"
         data={sports}
         loading={isLoading}

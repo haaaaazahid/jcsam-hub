@@ -650,6 +650,48 @@ export async function logout() {
 }
 
 // ============================================================
+// UPDATE PASSWORD
+//
+// NOTE: this calls an "updatePassword" action on the Google
+// Apps Script backend. The frontend was already wired to a
+// `updatePassword()` call in AdminLayout.tsx with nothing behind
+// it - this adds the client-side half. The Apps Script web app
+// (outside this repo) needs a matching case in its doPost/doGet
+// action switch, e.g.:
+//
+//   if (action === "updatePassword") {
+//     const admin = getAdminByToken(token);
+//     if (!admin) return jsonError("Invalid session");
+//     updateAdminPasswordInSheet(admin.id, hash(newPassword));
+//     return jsonSuccess({});
+//   }
+// ============================================================
+
+export async function updatePassword(
+  newPassword: string
+) {
+  const token =
+    getAdminToken();
+
+  if (!token) {
+    throw new Error(
+      "Admin session expired. Please login again."
+    );
+  }
+
+  const result =
+    await apiPost(
+      "updatePassword",
+      {
+        token,
+        newPassword,
+      }
+    );
+
+  return result;
+}
+
+// ============================================================
 // IMAGE UPLOAD
 // ============================================================
 
@@ -741,6 +783,7 @@ export default {
 
   login,
   logout,
+  updatePassword,
 
   uploadImage,
   testConnection,

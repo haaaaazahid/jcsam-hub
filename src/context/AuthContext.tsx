@@ -8,7 +8,8 @@ import React, {
 
 import {
   login,
-  logout,
+  logout as logoutApi,
+  updatePassword as updatePasswordApi,
   getAdminToken,
   getAdmin,
   setAdminSession,
@@ -46,6 +47,12 @@ interface AuthContextType {
   }>;
 
   signOut: () => Promise<void>;
+
+  // Aliases kept for pages that import `logout` directly
+  // (e.g. AdminLayout.tsx) instead of `signOut`.
+  logout: () => Promise<void>;
+
+  updatePassword: (newPassword: string) => Promise<boolean>;
 
   isAuthenticated: boolean;
 }
@@ -163,7 +170,7 @@ export const AuthProvider = ({
   const signOut = useCallback(
     async (): Promise<void> => {
       try {
-        await logout();
+        await logoutApi();
       } catch {
         // Server logout failure should not prevent
         // clearing the local session.
@@ -172,6 +179,22 @@ export const AuthProvider = ({
 
       setSession(null);
       setUser(null);
+    },
+    []
+  );
+
+  // ==========================================================
+  // UPDATE PASSWORD
+  // ==========================================================
+
+  const updatePassword = useCallback(
+    async (newPassword: string): Promise<boolean> => {
+      try {
+        await updatePasswordApi(newPassword);
+        return true;
+      } catch {
+        return false;
+      }
     },
     []
   );
@@ -188,6 +211,8 @@ export const AuthProvider = ({
         loading,
         signIn,
         signOut,
+        logout: signOut,
+        updatePassword,
         isAuthenticated:
           !!session?.token,
       }}

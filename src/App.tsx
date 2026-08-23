@@ -25,7 +25,6 @@ const ContactPage = lazy(() => import("./pages/ContactPage"));
 
 // Authentication pages
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-const AdminSignup = lazy(() => import("./pages/AdminSignup"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Admin pages
@@ -93,7 +92,6 @@ const App = () => (
 
                   {/* AUTH */}
                   <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/signup" element={<AdminSignup />} />
                   <Route
                     path="/admin/reset-password"
                     element={<ResetPassword />}

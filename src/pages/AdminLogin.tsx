@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -340,22 +340,6 @@ const AdminLogin = () => {
                 Forgot Password?
               </button>
 
-              {/* ================================================== */}
-              {/* SIGNUP */}
-              {/* ================================================== */}
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Need a final admin account?{" "}
-
-                  <Link
-                    to="/admin/signup"
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Sign Up
-                  </Link>
-                </p>
-              </div>
             </>
           ) : (
 

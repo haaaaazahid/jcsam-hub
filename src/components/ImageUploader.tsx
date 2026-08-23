@@ -8,34 +8,26 @@ function getAdminToken(): string {
   return localStorage.getItem("jcsam_admin_token") || "";
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // strip the "data:image/png;base64," prefix — Apps Script wants raw base64
-      resolve(result.split(",")[1] || "");
-    };
-    reader.onerror = () => reject(new Error("Could not read file"));
-    reader.readAsDataURL(file);
-  });
-}
-
+// IMPORTANT: pass the original File straight to uploadImage().
+// api.ts's uploadImage(file, bucket) already converts to Base64
+// internally - converting it again here and calling it with 5
+// positional args was the source of the upload-breaking bug
+// (api.ts only accepts (file, bucket)).
 async function uploadToDrive(file: File, bucket: string): Promise<string> {
-  const base64 = await fileToBase64(file);
   const token = getAdminToken();
 
   if (!token) {
     throw new Error("You must be logged in as admin to upload images.");
   }
 
-  const result: any = await uploadImageApi(base64, file.name, file.type, bucket, token);
+  const result: any = await uploadImageApi(file, bucket);
+  const url = result?.url || result?.data?.url;
 
-  if (!result.success || !result.url) {
-    throw new Error(result.error || "Upload failed");
+  if (!result?.success || !url) {
+    throw new Error(result?.error || result?.message || "Upload failed");
   }
 
-  return result.url;
+  return url;
 }
 
 interface ImageUploaderProps {

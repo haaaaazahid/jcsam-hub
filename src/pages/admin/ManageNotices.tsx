@@ -2,16 +2,17 @@
 import CrudTable from "@/components/CrudTable";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useNotices, useCreateNotice, useUpdateNotice, useDeleteNotice, useSports } from "@/hooks/useAppData";
+import type { Notice } from "@/types/entities";
 
 const ManageNotices = () => {
-  const { data: notices = [], isLoading } = useNotices();
+  const { data: notices = [] as Notice[], isLoading } = useNotices();
   const { data: sports = [] } = useSports();
   const createNotice = useCreateNotice();
   const updateNotice = useUpdateNotice();
   const deleteNotice = useDeleteNotice();
 
   return (
-    <CrudTable
+    <CrudTable<Notice>
       title="Manage Notices"
       data={notices}
       loading={isLoading}

@@ -1,22 +1,36 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGallery } from "@/hooks/useAppData";
+import { useGallery, useSports } from "@/hooks/useAppData";
 import { FiX, FiChevronLeft, FiChevronRight, FiLoader, FiArrowLeft, FiImage } from "react-icons/fi";
 
+// ============================================================
+// PUBLIC GALLERY PAGE
+//
+// This used to group images by a `category` field that is
+// never set anywhere - ManageGallery.tsx (the admin page)
+// organizes uploads by sport_id, so public visitors never saw
+// the sport-based organization admins actually set up. This
+// now mirrors ManageGallery's grouping so what the admin
+// organizes is what visitors browse.
+// ============================================================
+
 const GalleryPage = () => {
-  const { data: gallery = [], isLoading } = useGallery();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { data: gallery = [], isLoading: galleryLoading } = useGallery();
+  const { data: sports = [], isLoading: sportsLoading } = useSports();
+  const [selectedSportId, setSelectedSportId] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
-  const categories = Array.from(new Set(gallery.map((img: any) => img.category || "Uncategorized")));
+  const isLoading = galleryLoading || sportsLoading;
 
-  const categoryGroups = categories.map((cat) => ({
-    name: cat,
-    images: gallery.filter((img: any) => (img.category || "Uncategorized") === cat),
+  const sportGroups = sports.map((sport: any) => ({
+    ...sport,
+    images: gallery.filter((img: any) => String(img.sport_id) === String(sport.id)),
   }));
 
-  const currentImages = selectedCategory
-    ? gallery.filter((img: any) => (img.category || "Uncategorized") === selectedCategory)
+  const selectedSport = sports.find((s: any) => String(s.id) === String(selectedSportId)) as any;
+
+  const currentImages = selectedSportId
+    ? gallery.filter((img: any) => String(img.sport_id) === String(selectedSportId))
     : [];
 
   return (
@@ -28,16 +42,16 @@ const GalleryPage = () => {
 
       {isLoading ? (
         <div className="flex justify-center py-12"><FiLoader className="w-6 h-6 animate-spin text-primary" /></div>
-      ) : selectedCategory ? (
+      ) : selectedSportId ? (
         <div>
           <button
-            onClick={() => { setSelectedCategory(null); setLightboxIdx(null); }}
+            onClick={() => { setSelectedSportId(null); setLightboxIdx(null); }}
             className="flex items-center gap-2 text-sm text-primary hover:underline mb-6"
           >
-            <FiArrowLeft /> Back to All Categories
+            <FiArrowLeft /> Back to All Sports
           </button>
           <h2 className="text-2xl font-display font-bold text-foreground mb-6">
-            {selectedCategory}
+            {selectedSport?.icon} {selectedSport?.name}
             <span className="text-sm font-normal text-muted-foreground ml-2">({currentImages.length} photos)</span>
           </h2>
           {currentImages.length > 0 ? (
@@ -71,42 +85,42 @@ const GalleryPage = () => {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
-          {categoryGroups.map((cat, i) => (
+          {sportGroups.map((sport: any, i: number) => (
             <motion.div
-              key={cat.name}
+              key={sport.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06, duration: 0.5 }}
               whileHover={{ y: -8, scale: 1.03 }}
-              onClick={() => setSelectedCategory(cat.name)}
+              onClick={() => setSelectedSportId(String(sport.id))}
               className="cursor-pointer group"
             >
               <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-muted">
-                {cat.images.length > 0 ? (
+                {sport.images.length > 0 ? (
                   <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
-                    {cat.images.slice(0, 4).map((img: any) => (
+                    {sport.images.slice(0, 4).map((img: any) => (
                       <img key={img.id} src={img.url} alt={img.caption} className="w-full h-full object-cover" loading="lazy" />
                     ))}
-                    {cat.images.length < 4 && Array.from({ length: 4 - Math.min(cat.images.length, 4) }).map((_, j) => (
+                    {sport.images.length < 4 && Array.from({ length: 4 - Math.min(sport.images.length, 4) }).map((_: any, j: number) => (
                       <div key={`ph-${j}`} className="bg-muted" />
                     ))}
                   </div>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <FiImage className="w-12 h-12 text-muted-foreground/40" />
+                  <div className="w-full h-full flex items-center justify-center bg-muted text-4xl">
+                    {sport.icon || <FiImage className="w-12 h-12 text-muted-foreground/40" />}
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent flex items-end p-4 group-hover:from-primary/80 transition-all duration-500">
                   <div>
-                    <p className="text-white text-lg font-bold">{cat.name}</p>
-                    <p className="text-white/70 text-sm">{cat.images.length} {cat.images.length === 1 ? "photo" : "photos"}</p>
+                    <p className="text-white text-lg font-bold">{sport.icon} {sport.name}</p>
+                    <p className="text-white/70 text-sm">{sport.images.length} {sport.images.length === 1 ? "photo" : "photos"}</p>
                   </div>
                 </div>
               </div>
             </motion.div>
           ))}
-          {categoryGroups.length === 0 && (
+          {sportGroups.length === 0 && (
             <p className="col-span-full text-center text-muted-foreground py-12">No photos yet.</p>
           )}
         </div>

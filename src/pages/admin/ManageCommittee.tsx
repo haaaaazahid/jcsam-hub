@@ -1,15 +1,16 @@
 import CrudTable from "@/components/CrudTable";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useCommittee, useCreateCommitteeMember, useUpdateCommitteeMember, useDeleteCommitteeMember } from "@/hooks/useAppData";
+import type { CommitteeMember } from "@/types/entities";
 
 const ManageCommittee = () => {
-  const { data: committee = [], isLoading } = useCommittee();
+  const { data: committee = [] as CommitteeMember[], isLoading } = useCommittee();
   const createMember = useCreateCommitteeMember();
   const updateMember = useUpdateCommitteeMember();
   const deleteMember = useDeleteCommitteeMember();
 
   return (
-    <CrudTable
+    <CrudTable<CommitteeMember>
       title="Manage Committee"
       data={committee}
       loading={isLoading}
