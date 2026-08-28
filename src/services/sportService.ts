@@ -61,7 +61,7 @@ function normalizeSport(
 
     icon:
       raw.icon ||
-      "🏅",
+      "",
 
     rules:
       raw.rules ||
