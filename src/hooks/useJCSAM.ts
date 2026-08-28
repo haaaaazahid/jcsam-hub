@@ -1,3 +1,8 @@
+// ============================================================
+// JCSAM HUB - APP DATA HOOKS
+// GOOGLE SHEETS / APPS SCRIPT VERSION
+// ============================================================
+
 import {
   useQuery,
   useMutation,
@@ -5,6 +10,10 @@ import {
 } from "@tanstack/react-query";
 
 import { toast } from "sonner";
+
+import {
+  getAdminToken,
+} from "@/services/api";
 
 import { sportService } from "@/services/sportService";
 import { collegeService } from "@/services/collegeService";
@@ -23,7 +32,8 @@ import { dashboardService } from "@/services/dashboardService";
 export function useSports() {
   return useQuery({
     queryKey: ["sports"],
-    queryFn: () => sportService.getAll(),
+    queryFn: () =>
+      sportService.getAll(),
     staleTime: 60_000,
   });
 }
@@ -32,13 +42,24 @@ export function useCreateSport() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (sport: any) => sportService.create(sport),
+    mutationFn: (sport: any) =>
+      sportService.create(sport),
+
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sports"] });
-      toast.success("Sport added!");
+      qc.invalidateQueries({
+        queryKey: ["sports"],
+      });
+
+      toast.success(
+        "Sport added!"
+      );
     },
+
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add sport");
+      toast.error(
+        error?.message ||
+          "Failed to add sport"
+      );
     },
   });
 }
@@ -47,13 +68,24 @@ export function useUpdateSport() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (sport: any) => sportService.update(sport),
+    mutationFn: (sport: any) =>
+      sportService.update(sport),
+
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sports"] });
-      toast.success("Sport updated!");
+      qc.invalidateQueries({
+        queryKey: ["sports"],
+      });
+
+      toast.success(
+        "Sport updated!"
+      );
     },
+
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update sport");
+      toast.error(
+        error?.message ||
+          "Failed to update sport"
+      );
     },
   });
 }
@@ -62,13 +94,24 @@ export function useDeleteSport() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => sportService.remove(id),
+    mutationFn: (id: string) =>
+      sportService.remove(id),
+
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sports"] });
-      toast.success("Sport deleted!");
+      qc.invalidateQueries({
+        queryKey: ["sports"],
+      });
+
+      toast.success(
+        "Sport deleted!"
+      );
     },
+
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete sport");
+      toast.error(
+        error?.message ||
+          "Failed to delete sport"
+      );
     },
   });
 }
@@ -77,17 +120,29 @@ export function useDeleteSport() {
 // SPORT IMAGES
 // ============================================================
 
-export function useSportImages(sportId?: string) {
+export function useSportImages(
+  sportId?: string
+) {
   return useQuery({
-    queryKey: ["sport-images", sportId],
+    queryKey: [
+      "sport-images",
+      sportId,
+    ],
+
     queryFn: () => {
       if (!sportId) {
-        throw new Error("Sport ID is required");
+        throw new Error(
+          "Sport ID is required"
+        );
       }
 
-      return sportService.getImages(sportId);
+      return sportService.getImages(
+        sportId
+      );
     },
+
     enabled: Boolean(sportId),
+
     staleTime: 60_000,
   });
 }
@@ -101,18 +156,29 @@ export function useAddSportImage() {
       url: string;
       caption: string;
       display_order?: number;
-    }) => sportService.addImage(image),
+    }) =>
+      sportService.addImage(
+        image
+      ),
 
     onSuccess: (_, variables) => {
       qc.invalidateQueries({
-        queryKey: ["sport-images", variables.sport_id],
+        queryKey: [
+          "sport-images",
+          variables.sport_id,
+        ],
       });
 
-      toast.success("Image added!");
+      toast.success(
+        "Image added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add image");
+      toast.error(
+        error?.message ||
+          "Failed to add image"
+      );
     },
   });
 }
@@ -126,18 +192,29 @@ export function useDeleteSportImage() {
     }: {
       id: string;
       sportId: string;
-    }) => sportService.deleteImage(id),
+    }) =>
+      sportService.deleteImage(
+        id
+      ),
 
     onSuccess: (_, variables) => {
       qc.invalidateQueries({
-        queryKey: ["sport-images", variables.sportId],
+        queryKey: [
+          "sport-images",
+          variables.sportId,
+        ],
       });
 
-      toast.success("Image removed!");
+      toast.success(
+        "Image removed!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to remove image");
+      toast.error(
+        error?.message ||
+          "Failed to remove image"
+      );
     },
   });
 }
@@ -149,21 +226,24 @@ export function useDeleteSportImage() {
 export function useColleges() {
   return useQuery({
     queryKey: ["colleges"],
-    queryFn: () => collegeService.getAll(),
+
+    queryFn: () =>
+      collegeService.getAll(),
+
     staleTime: 60_000,
   });
 }
-
-// ============================================================
-// PUBLIC COLLEGE REGISTRATION
-// ============================================================
 
 export function useRegisterCollege() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (college: Record<string, any>) =>
-      collegeService.register(college),
+    mutationFn: (
+      college: Record<string, any>
+    ) =>
+      collegeService.register(
+        college
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
@@ -193,18 +273,25 @@ export function useCreateCollege() {
 
   return useMutation({
     mutationFn: (college: any) =>
-      collegeService.create(college),
+      collegeService.create(
+        college
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["colleges"],
       });
 
-      toast.success("College added!");
+      toast.success(
+        "College added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add college");
+      toast.error(
+        error?.message ||
+          "Failed to add college"
+      );
     },
   });
 }
@@ -214,18 +301,25 @@ export function useUpdateCollege() {
 
   return useMutation({
     mutationFn: (college: any) =>
-      collegeService.update(college),
+      collegeService.update(
+        college
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["colleges"],
       });
 
-      toast.success("College updated!");
+      toast.success(
+        "College updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update college");
+      toast.error(
+        error?.message ||
+          "Failed to update college"
+      );
     },
   });
 }
@@ -242,11 +336,16 @@ export function useDeleteCollege() {
         queryKey: ["colleges"],
       });
 
-      toast.success("College deleted!");
+      toast.success(
+        "College deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete college");
+      toast.error(
+        error?.message ||
+          "Failed to delete college"
+      );
     },
   });
 }
@@ -258,21 +357,24 @@ export function useDeleteCollege() {
 export function usePlayers() {
   return useQuery({
     queryKey: ["players"],
-    queryFn: () => playerService.getAll(),
+
+    queryFn: () =>
+      playerService.getAll(),
+
     staleTime: 60_000,
   });
 }
-
-// ============================================================
-// PUBLIC PLAYER REGISTRATION
-// ============================================================
 
 export function useRegisterPlayer() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (player: Record<string, any>) =>
-      playerService.register(player),
+    mutationFn: (
+      player: Record<string, any>
+    ) =>
+      playerService.register(
+        player
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
@@ -293,27 +395,30 @@ export function useRegisterPlayer() {
   });
 }
 
-// ============================================================
-// ADMIN PLAYER CRUD
-// ============================================================
-
 export function useCreatePlayer() {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: (player: any) =>
-      playerService.create(player),
+      playerService.create(
+        player
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["players"],
       });
 
-      toast.success("Player added!");
+      toast.success(
+        "Player added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add player");
+      toast.error(
+        error?.message ||
+          "Failed to add player"
+      );
     },
   });
 }
@@ -323,18 +428,25 @@ export function useUpdatePlayer() {
 
   return useMutation({
     mutationFn: (player: any) =>
-      playerService.update(player),
+      playerService.update(
+        player
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["players"],
       });
 
-      toast.success("Player updated!");
+      toast.success(
+        "Player updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update player");
+      toast.error(
+        error?.message ||
+          "Failed to update player"
+      );
     },
   });
 }
@@ -351,11 +463,16 @@ export function useDeletePlayer() {
         queryKey: ["players"],
       });
 
-      toast.success("Player deleted!");
+      toast.success(
+        "Player deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete player");
+      toast.error(
+        error?.message ||
+          "Failed to delete player"
+      );
     },
   });
 }
@@ -367,7 +484,10 @@ export function useDeletePlayer() {
 export function useSchedules() {
   return useQuery({
     queryKey: ["schedules"],
-    queryFn: () => scheduleService.getAll(),
+
+    queryFn: () =>
+      scheduleService.getAll(),
+
     staleTime: 30_000,
   });
 }
@@ -377,18 +497,25 @@ export function useCreateSchedule() {
 
   return useMutation({
     mutationFn: (schedule: any) =>
-      scheduleService.create(schedule),
+      scheduleService.create(
+        schedule
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["schedules"],
       });
 
-      toast.success("Schedule added!");
+      toast.success(
+        "Schedule added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add schedule");
+      toast.error(
+        error?.message ||
+          "Failed to add schedule"
+      );
     },
   });
 }
@@ -398,18 +525,25 @@ export function useUpdateSchedule() {
 
   return useMutation({
     mutationFn: (schedule: any) =>
-      scheduleService.update(schedule),
+      scheduleService.update(
+        schedule
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["schedules"],
       });
 
-      toast.success("Schedule updated!");
+      toast.success(
+        "Schedule updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update schedule");
+      toast.error(
+        error?.message ||
+          "Failed to update schedule"
+      );
     },
   });
 }
@@ -426,11 +560,16 @@ export function useDeleteSchedule() {
         queryKey: ["schedules"],
       });
 
-      toast.success("Schedule deleted!");
+      toast.success(
+        "Schedule deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete schedule");
+      toast.error(
+        error?.message ||
+          "Failed to delete schedule"
+      );
     },
   });
 }
@@ -442,7 +581,10 @@ export function useDeleteSchedule() {
 export function useResults() {
   return useQuery({
     queryKey: ["results"],
-    queryFn: () => resultService.getAll(),
+
+    queryFn: () =>
+      resultService.getAll(),
+
     staleTime: 60_000,
   });
 }
@@ -452,18 +594,25 @@ export function useCreateResult() {
 
   return useMutation({
     mutationFn: (result: any) =>
-      resultService.create(result),
+      resultService.create(
+        result
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["results"],
       });
 
-      toast.success("Result added!");
+      toast.success(
+        "Result added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add result");
+      toast.error(
+        error?.message ||
+          "Failed to add result"
+      );
     },
   });
 }
@@ -473,18 +622,25 @@ export function useUpdateResult() {
 
   return useMutation({
     mutationFn: (result: any) =>
-      resultService.update(result),
+      resultService.update(
+        result
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["results"],
       });
 
-      toast.success("Result updated!");
+      toast.success(
+        "Result updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update result");
+      toast.error(
+        error?.message ||
+          "Failed to update result"
+      );
     },
   });
 }
@@ -501,11 +657,16 @@ export function useDeleteResult() {
         queryKey: ["results"],
       });
 
-      toast.success("Result deleted!");
+      toast.success(
+        "Result deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete result");
+      toast.error(
+        error?.message ||
+          "Failed to delete result"
+      );
     },
   });
 }
@@ -517,7 +678,10 @@ export function useDeleteResult() {
 export function useNotices() {
   return useQuery({
     queryKey: ["notices"],
-    queryFn: () => noticeService.getAll(),
+
+    queryFn: () =>
+      noticeService.getAll(),
+
     staleTime: 30_000,
   });
 }
@@ -527,18 +691,25 @@ export function useCreateNotice() {
 
   return useMutation({
     mutationFn: (notice: any) =>
-      noticeService.create(notice),
+      noticeService.create(
+        notice
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["notices"],
       });
 
-      toast.success("Notice added!");
+      toast.success(
+        "Notice added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add notice");
+      toast.error(
+        error?.message ||
+          "Failed to add notice"
+      );
     },
   });
 }
@@ -548,18 +719,25 @@ export function useUpdateNotice() {
 
   return useMutation({
     mutationFn: (notice: any) =>
-      noticeService.update(notice),
+      noticeService.update(
+        notice
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["notices"],
       });
 
-      toast.success("Notice updated!");
+      toast.success(
+        "Notice updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update notice");
+      toast.error(
+        error?.message ||
+          "Failed to update notice"
+      );
     },
   });
 }
@@ -576,11 +754,16 @@ export function useDeleteNotice() {
         queryKey: ["notices"],
       });
 
-      toast.success("Notice deleted!");
+      toast.success(
+        "Notice deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete notice");
+      toast.error(
+        error?.message ||
+          "Failed to delete notice"
+      );
     },
   });
 }
@@ -592,7 +775,10 @@ export function useDeleteNotice() {
 export function useCommittee() {
   return useQuery({
     queryKey: ["committee"],
-    queryFn: () => committeeService.getAll(),
+
+    queryFn: () =>
+      committeeService.getAll(),
+
     staleTime: 300_000,
   });
 }
@@ -602,18 +788,25 @@ export function useCreateCommitteeMember() {
 
   return useMutation({
     mutationFn: (member: any) =>
-      committeeService.create(member),
+      committeeService.create(
+        member
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["committee"],
       });
 
-      toast.success("Member added!");
+      toast.success(
+        "Member added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add member");
+      toast.error(
+        error?.message ||
+          "Failed to add member"
+      );
     },
   });
 }
@@ -623,18 +816,25 @@ export function useUpdateCommitteeMember() {
 
   return useMutation({
     mutationFn: (member: any) =>
-      committeeService.update(member),
+      committeeService.update(
+        member
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["committee"],
       });
 
-      toast.success("Member updated!");
+      toast.success(
+        "Member updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update member");
+      toast.error(
+        error?.message ||
+          "Failed to update member"
+      );
     },
   });
 }
@@ -651,11 +851,16 @@ export function useDeleteCommitteeMember() {
         queryKey: ["committee"],
       });
 
-      toast.success("Member deleted!");
+      toast.success(
+        "Member deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete member");
+      toast.error(
+        error?.message ||
+          "Failed to delete member"
+      );
     },
   });
 }
@@ -667,7 +872,10 @@ export function useDeleteCommitteeMember() {
 export function useGallery() {
   return useQuery({
     queryKey: ["gallery"],
-    queryFn: () => galleryService.getAll(),
+
+    queryFn: () =>
+      galleryService.getAll(),
+
     staleTime: 300_000,
   });
 }
@@ -677,18 +885,25 @@ export function useCreateGalleryItem() {
 
   return useMutation({
     mutationFn: (item: any) =>
-      galleryService.create(item),
+      galleryService.create(
+        item
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["gallery"],
       });
 
-      toast.success("Image added!");
+      toast.success(
+        "Image added!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to add image");
+      toast.error(
+        error?.message ||
+          "Failed to add image"
+      );
     },
   });
 }
@@ -698,18 +913,25 @@ export function useUpdateGalleryItem() {
 
   return useMutation({
     mutationFn: (item: any) =>
-      galleryService.update(item),
+      galleryService.update(
+        item
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["gallery"],
       });
 
-      toast.success("Image updated!");
+      toast.success(
+        "Image updated!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to update image");
+      toast.error(
+        error?.message ||
+          "Failed to update image"
+      );
     },
   });
 }
@@ -726,23 +948,54 @@ export function useDeleteGalleryItem() {
         queryKey: ["gallery"],
       });
 
-      toast.success("Image deleted!");
+      toast.success(
+        "Image deleted!"
+      );
     },
 
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete image");
+      toast.error(
+        error?.message ||
+          "Failed to delete image"
+      );
     },
   });
 }
 
 // ============================================================
-// DASHBOARD
+// ADMIN DASHBOARD
 // ============================================================
 
 export function useDashboardStats() {
+  const token =
+    getAdminToken();
+
   return useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: () => dashboardService.getStats(),
+    queryKey: [
+      "dashboard-stats",
+      token,
+    ],
+
+    queryFn: () =>
+      dashboardService.getStats(),
+
+    enabled: Boolean(token),
+
     staleTime: 30_000,
+
+    retry: 1,
+
+    refetchOnWindowFocus: true,
   });
 }
+
+// ============================================================
+// LEGACY COMPATIBILITY
+// ============================================================
+//
+// Existing code may import:
+//
+// import { ... } from "@/hooks/useAppData";
+//
+// Keep this file as the central hook export.
+// ============================================================

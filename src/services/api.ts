@@ -1,6 +1,19 @@
 // ============================================================
 // JCSAM HUB - GOOGLE APPS SCRIPT API CLIENT
 // ============================================================
+// React/Vite
+//      ↓
+// services/api.ts
+//      ↓
+// Google Apps Script
+//      ↓
+// Google Sheets
+//
+// Authentication:
+// localStorage admin session token
+//
+// No Supabase / Firebase authentication.
+// ============================================================
 
 const API_URL =
   import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL ||
@@ -17,6 +30,8 @@ export interface ApiResponse<T = any> {
   error?: string;
   token?: string;
   admin?: any;
+
+  // Allows additional Apps Script response properties.
   [key: string]: any;
 }
 
@@ -29,232 +44,343 @@ type ApiRecord = Record<string, any>;
 const TOKEN_KEY = "jcsam_admin_token";
 const ADMIN_KEY = "jcsam_admin";
 
-export function getAdminToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
+// ------------------------------------------------------------
+// GET ADMIN TOKEN
+// ------------------------------------------------------------
 
-export function getAdmin(): any | null {
+export function getAdminToken(): string | null {
   try {
-    const value = localStorage.getItem(ADMIN_KEY);
-    return value ? JSON.parse(value) : null;
+    return localStorage.getItem(TOKEN_KEY);
   } catch {
     return null;
   }
 }
 
+// ------------------------------------------------------------
+// GET ADMIN
+// ------------------------------------------------------------
+
+export function getAdmin(): any | null {
+  try {
+    const value =
+      localStorage.getItem(ADMIN_KEY);
+
+    return value
+      ? JSON.parse(value)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+// ------------------------------------------------------------
+// SET ADMIN SESSION
+// ------------------------------------------------------------
+
 export function setAdminSession(
   token: string,
   admin: any
 ): void {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(
-    ADMIN_KEY,
-    JSON.stringify(admin || {})
-  );
+  try {
+    localStorage.setItem(
+      TOKEN_KEY,
+      token
+    );
+
+    localStorage.setItem(
+      ADMIN_KEY,
+      JSON.stringify(admin || {})
+    );
+  } catch (error) {
+    console.error(
+      "Failed to save admin session:",
+      error
+    );
+  }
 }
 
+// ------------------------------------------------------------
+// CLEAR ADMIN SESSION
+// ------------------------------------------------------------
+
 export function clearAdminSession(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(ADMIN_KEY);
+  try {
+    localStorage.removeItem(
+      TOKEN_KEY
+    );
+
+    localStorage.removeItem(
+      ADMIN_KEY
+    );
+  } catch {
+    // Ignore storage errors.
+  }
 }
 
 // ============================================================
 // NORMALIZATION
 // ============================================================
 
-function normalizeDate(value: any): any {
+function normalizeDate(
+  value: any
+): any {
   return value;
 }
 
-export function normalizeRecord<T extends ApiRecord>(
+// ------------------------------------------------------------
+// NORMALIZE ONE RECORD
+// ------------------------------------------------------------
+
+export function normalizeRecord<
+  T extends ApiRecord
+>(
   record: T
 ): T {
-  if (!record || typeof record !== "object") {
+  if (
+    !record ||
+    typeof record !== "object"
+  ) {
     return record;
   }
 
-  const result: ApiRecord = { ...record };
+  const result: ApiRecord = {
+    ...record,
+  };
 
   // ----------------------------------------------------------
-  // ID aliases
+  // COLLEGE ID
   // ----------------------------------------------------------
 
   if (
     result.collegeId === undefined &&
     result.college_id !== undefined
   ) {
-    result.collegeId = result.college_id;
+    result.collegeId =
+      result.college_id;
   }
 
   if (
     result.college_id === undefined &&
     result.collegeId !== undefined
   ) {
-    result.college_id = result.collegeId;
+    result.college_id =
+      result.collegeId;
   }
+
+  // ----------------------------------------------------------
+  // SPORT ID
+  // ----------------------------------------------------------
 
   if (
     result.sportId === undefined &&
     result.sport_id !== undefined
   ) {
-    result.sportId = result.sport_id;
+    result.sportId =
+      result.sport_id;
   }
 
   if (
     result.sport_id === undefined &&
     result.sportId !== undefined
   ) {
-    result.sport_id = result.sportId;
+    result.sport_id =
+      result.sportId;
   }
+
+  // ----------------------------------------------------------
+  // PLAYER ID
+  // ----------------------------------------------------------
 
   if (
     result.playerId === undefined &&
     result.player_id !== undefined
   ) {
-    result.playerId = result.player_id;
+    result.playerId =
+      result.player_id;
   }
 
   if (
     result.player_id === undefined &&
     result.playerId !== undefined
   ) {
-    result.player_id = result.playerId;
+    result.player_id =
+      result.playerId;
   }
+
+  // ----------------------------------------------------------
+  // SCHEDULE ID
+  // ----------------------------------------------------------
 
   if (
     result.scheduleId === undefined &&
     result.schedule_id !== undefined
   ) {
-    result.scheduleId = result.schedule_id;
+    result.scheduleId =
+      result.schedule_id;
   }
 
   if (
     result.schedule_id === undefined &&
     result.scheduleId !== undefined
   ) {
-    result.schedule_id = result.scheduleId;
+    result.schedule_id =
+      result.scheduleId;
   }
+
+  // ----------------------------------------------------------
+  // RESULT ID
+  // ----------------------------------------------------------
 
   if (
     result.resultId === undefined &&
     result.result_id !== undefined
   ) {
-    result.resultId = result.result_id;
+    result.resultId =
+      result.result_id;
   }
 
   if (
     result.result_id === undefined &&
     result.resultId !== undefined
   ) {
-    result.result_id = result.resultId;
+    result.result_id =
+      result.resultId;
   }
 
   // ----------------------------------------------------------
-  // Contact aliases
+  // CONTACT PERSON
   // ----------------------------------------------------------
 
   if (
     result.contactPerson === undefined &&
     result.contact_person !== undefined
   ) {
-    result.contactPerson = result.contact_person;
+    result.contactPerson =
+      result.contact_person;
   }
 
   if (
     result.contact_person === undefined &&
     result.contactPerson !== undefined
   ) {
-    result.contact_person = result.contactPerson;
+    result.contact_person =
+      result.contactPerson;
   }
 
   // ----------------------------------------------------------
-  // Image aliases
+  // PHOTO URL
   // ----------------------------------------------------------
 
   if (
     result.photoUrl === undefined &&
     result.photo_url !== undefined
   ) {
-    result.photoUrl = result.photo_url;
+    result.photoUrl =
+      result.photo_url;
   }
 
   if (
     result.photo_url === undefined &&
     result.photoUrl !== undefined
   ) {
-    result.photo_url = result.photoUrl;
+    result.photo_url =
+      result.photoUrl;
   }
+
+  // ----------------------------------------------------------
+  // LOGO URL
+  // ----------------------------------------------------------
 
   if (
     result.logoUrl === undefined &&
     result.logo_url !== undefined
   ) {
-    result.logoUrl = result.logo_url;
+    result.logoUrl =
+      result.logo_url;
   }
 
   if (
     result.logo_url === undefined &&
     result.logoUrl !== undefined
   ) {
-    result.logo_url = result.logoUrl;
+    result.logo_url =
+      result.logoUrl;
   }
+
+  // ----------------------------------------------------------
+  // IMAGE URL
+  // ----------------------------------------------------------
 
   if (
     result.imageUrl === undefined &&
     result.image_url !== undefined
   ) {
-    result.imageUrl = result.image_url;
+    result.imageUrl =
+      result.image_url;
   }
 
   if (
     result.image_url === undefined &&
     result.imageUrl !== undefined
   ) {
-    result.image_url = result.imageUrl;
+    result.image_url =
+      result.imageUrl;
   }
 
   // ----------------------------------------------------------
-  // Date aliases
+  // CREATED AT
   // ----------------------------------------------------------
 
   if (
     result.createdAt === undefined &&
     result.created_at !== undefined
   ) {
-    result.createdAt = normalizeDate(
-      result.created_at
-    );
+    result.createdAt =
+      normalizeDate(
+        result.created_at
+      );
   }
 
   if (
     result.created_at === undefined &&
     result.createdAt !== undefined
   ) {
-    result.created_at = normalizeDate(
-      result.createdAt
-    );
+    result.created_at =
+      normalizeDate(
+        result.createdAt
+      );
   }
+
+  // ----------------------------------------------------------
+  // UPDATED AT
+  // ----------------------------------------------------------
 
   if (
     result.updatedAt === undefined &&
     result.updated_at !== undefined
   ) {
-    result.updatedAt = normalizeDate(
-      result.updated_at
-    );
+    result.updatedAt =
+      normalizeDate(
+        result.updated_at
+      );
   }
 
   if (
     result.updated_at === undefined &&
     result.updatedAt !== undefined
   ) {
-    result.updated_at = normalizeDate(
-      result.updatedAt
-    );
+    result.updated_at =
+      normalizeDate(
+        result.updatedAt
+      );
   }
 
   return result as T;
 }
+
+// ------------------------------------------------------------
+// NORMALIZE RECORDS
+// ------------------------------------------------------------
 
 export function normalizeRecords<
   T extends ApiRecord
@@ -265,7 +391,157 @@ export function normalizeRecords<
     return [];
   }
 
-  return records.map(normalizeRecord);
+  return records
+    .filter(
+      (record) =>
+        record !== null &&
+        typeof record === "object"
+    )
+    .map(
+      (record) =>
+        normalizeRecord<T>(
+          record
+        )
+    );
+}
+
+// ============================================================
+// RESPONSE DATA EXTRACTION
+// ============================================================
+//
+// Supports all common Apps Script response formats:
+//
+// 1. { success: true, data: [...] }
+//
+// 2. { success: true, data: { data: [...] } }
+//
+// 3. { success: true, data: { rows: [...] } }
+//
+// 4. { success: true, data: { records: [...] } }
+//
+// 5. { success: true, data: { items: [...] } }
+//
+// 6. { success: true, data: { results: [...] } }
+//
+// 7. { success: true, rows: [...] }
+//
+// 8. { success: true, records: [...] }
+// ============================================================
+
+function extractData<T = any>(
+  response: ApiResponse<any>
+): T[] {
+  const value =
+    response?.data;
+
+  // ----------------------------------------------------------
+  // Direct array
+  // ----------------------------------------------------------
+
+  if (
+    Array.isArray(value)
+  ) {
+    return value as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Nested data array
+  // ----------------------------------------------------------
+
+  if (
+    value &&
+    Array.isArray(
+      value.data
+    )
+  ) {
+    return value.data as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Rows
+  // ----------------------------------------------------------
+
+  if (
+    value &&
+    Array.isArray(
+      value.rows
+    )
+  ) {
+    return value.rows as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Records
+  // ----------------------------------------------------------
+
+  if (
+    value &&
+    Array.isArray(
+      value.records
+    )
+  ) {
+    return value.records as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Items
+  // ----------------------------------------------------------
+
+  if (
+    value &&
+    Array.isArray(
+      value.items
+    )
+  ) {
+    return value.items as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Results
+  // ----------------------------------------------------------
+
+  if (
+    value &&
+    Array.isArray(
+      value.results
+    )
+  ) {
+    return value.results as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Response-level rows
+  // ----------------------------------------------------------
+
+  if (
+    Array.isArray(
+      (response as any).rows
+    )
+  ) {
+    return (
+      (response as any).rows
+    ) as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Response-level records
+  // ----------------------------------------------------------
+
+  if (
+    Array.isArray(
+      (response as any).records
+    )
+  ) {
+    return (
+      (response as any).records
+    ) as T[];
+  }
+
+  // ----------------------------------------------------------
+  // Nothing found
+  // ----------------------------------------------------------
+
+  return [];
 }
 
 // ============================================================
@@ -275,20 +551,32 @@ export function normalizeRecords<
 async function parseResponse(
   response: Response
 ): Promise<ApiResponse> {
-  const text = await response.text();
+  const text =
+    await response.text();
+
+  if (!text) {
+    throw new Error(
+      `Empty API response (${response.status})`
+    );
+  }
 
   let json: ApiResponse;
 
   try {
-    json = JSON.parse(text);
+    json =
+      JSON.parse(text);
   } catch {
     throw new Error(
       `Invalid API response (${response.status}): ${text.slice(
         0,
-        300
+        500
       )}`
     );
   }
+
+  // ----------------------------------------------------------
+  // HTTP ERROR
+  // ----------------------------------------------------------
 
   if (!response.ok) {
     throw new Error(
@@ -298,7 +586,13 @@ async function parseResponse(
     );
   }
 
-  if (json.success === false) {
+  // ----------------------------------------------------------
+  // APPLICATION ERROR
+  // ----------------------------------------------------------
+
+  if (
+    json.success === false
+  ) {
     throw new Error(
       json.error ||
         json.message ||
@@ -310,21 +604,40 @@ async function parseResponse(
 }
 
 // ============================================================
-// GET
+// GET REQUEST
 // ============================================================
 
-export async function apiGet<T = any>(
+export async function apiGet<
+  T = any
+>(
   action: string,
   params: Record<
     string,
-    string | number | boolean | undefined
+    string |
+      number |
+      boolean |
+      undefined
   > = {}
-): Promise<ApiResponse<T>> {
-  const url = new URL(API_URL);
+): Promise<
+  ApiResponse<T>
+> {
+  if (!API_URL) {
+    throw new Error(
+      "Google Apps Script API URL is not configured."
+    );
+  }
 
-  url.searchParams.set("action", action);
+  const url =
+    new URL(API_URL);
 
-  Object.entries(params).forEach(
+  url.searchParams.set(
+    "action",
+    action
+  );
+
+  Object.entries(
+    params
+  ).forEach(
     ([key, value]) => {
       if (
         value !== undefined &&
@@ -338,61 +651,88 @@ export async function apiGet<T = any>(
     }
   );
 
-  const response = await fetch(
-    url.toString(),
-    {
-      method: "GET",
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      url.toString(),
+      {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          Accept:
+            "application/json",
+        },
+      }
+    );
 
-  return (await parseResponse(
-    response
-  )) as ApiResponse<T>;
+  return (
+    (await parseResponse(
+      response
+    )) as ApiResponse<T>
+  );
 }
 
 // ============================================================
-// POST
+// POST REQUEST
 // ============================================================
 
-export async function apiPost<T = any>(
+export async function apiPost<
+  T = any
+>(
   action: string,
-  body: Record<string, any> = {}
-): Promise<ApiResponse<T>> {
-  const response = await fetch(
-    API_URL,
-    {
-      method: "POST",
-      headers: {
-        // text/plain avoids unnecessary CORS preflight
-        // with Google Apps Script Web Apps.
-        "Content-Type":
-          "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify({
-        action,
-        ...body,
-      }),
-    }
-  );
+  body: Record<
+    string,
+    any
+  > = {}
+): Promise<
+  ApiResponse<T>
+> {
+  if (!API_URL) {
+    throw new Error(
+      "Google Apps Script API URL is not configured."
+    );
+  }
 
-  return (await parseResponse(
-    response
-  )) as ApiResponse<T>;
+  const response =
+    await fetch(
+      API_URL,
+      {
+        method: "POST",
+
+        headers: {
+          // text/plain avoids unnecessary
+          // CORS preflight with Google Apps Script.
+          "Content-Type":
+            "text/plain;charset=utf-8",
+        },
+
+        body: JSON.stringify({
+          action,
+          ...body,
+        }),
+      }
+    );
+
+  return (
+    (await parseResponse(
+      response
+    )) as ApiResponse<T>
+  );
 }
 
 // ============================================================
-// TEST
+// TEST CONNECTION
 // ============================================================
 
 export async function testConnection(): Promise<
   ApiResponse
 > {
-  return apiGet("test");
+  return apiGet(
+    "test"
+  );
 }
 
 // ============================================================
-// SHEETS
+// PUBLIC SHEETS
 // ============================================================
 
 export async function getSheet<
@@ -400,26 +740,50 @@ export async function getSheet<
 >(
   sheet: string
 ): Promise<T[]> {
+  if (!sheet) {
+    throw new Error(
+      "Sheet name is required."
+    );
+  }
+
+  // IMPORTANT:
+  // Do not use apiGet<T[]> here.
+  //
+  // Apps Script returns an ApiResponse object.
+  // The array is extracted separately by extractData().
   const result =
-    await apiGet<T[]>(
+    await apiGet(
       "get",
-      { sheet }
+      {
+        sheet,
+      }
     );
 
-  const records = Array.isArray(result.data)
-    ? result.data
-    : [];
+  const records =
+    extractData<T>(
+      result
+    );
 
-  return normalizeRecords(
-    records as T[]
+  return normalizeRecords<T>(
+    records
   );
 }
+
+// ============================================================
+// ADMIN SHEETS
+// ============================================================
 
 export async function adminGet<
   T extends ApiRecord = ApiRecord
 >(
   sheet: string
 ): Promise<T[]> {
+  if (!sheet) {
+    throw new Error(
+      "Sheet name is required."
+    );
+  }
+
   const token =
     getAdminToken();
 
@@ -429,8 +793,11 @@ export async function adminGet<
     );
   }
 
+  // IMPORTANT:
+  // Same reason as getSheet().
+  // Do not use apiGet<T[]>.
   const result =
-    await apiGet<T[]>(
+    await apiGet(
       "adminGet",
       {
         sheet,
@@ -438,17 +805,18 @@ export async function adminGet<
       }
     );
 
-  const records = Array.isArray(result.data)
-    ? result.data
-    : [];
+  const records =
+    extractData<T>(
+      result
+    );
 
-  return normalizeRecords(
-    records as T[]
+  return normalizeRecords<T>(
+    records
   );
 }
 
 // ============================================================
-// CRUD
+// CREATE RECORD
 // ============================================================
 
 export async function createRecord<
@@ -457,6 +825,12 @@ export async function createRecord<
   sheet: string,
   data: ApiRecord
 ): Promise<T> {
+  if (!sheet) {
+    throw new Error(
+      "Sheet name is required."
+    );
+  }
+
   const token =
     getAdminToken();
 
@@ -467,7 +841,7 @@ export async function createRecord<
   }
 
   const result =
-    await apiPost<T>(
+    await apiPost(
       "create",
       {
         token,
@@ -477,12 +851,23 @@ export async function createRecord<
     );
 
   const record =
-    result.data || data;
+    result.data &&
+    typeof result.data ===
+      "object" &&
+    !Array.isArray(
+      result.data
+    )
+      ? result.data
+      : data;
 
-  return normalizeRecord(
-    record as T
+  return normalizeRecord<T>(
+    record as unknown as T
   );
 }
+
+// ============================================================
+// UPDATE RECORD
+// ============================================================
 
 export async function updateRecord<
   T extends ApiRecord = ApiRecord
@@ -491,6 +876,18 @@ export async function updateRecord<
   id: string,
   data: ApiRecord
 ): Promise<T> {
+  if (!sheet) {
+    throw new Error(
+      "Sheet name is required."
+    );
+  }
+
+  if (!id) {
+    throw new Error(
+      "Record ID is required."
+    );
+  }
+
   const token =
     getAdminToken();
 
@@ -501,7 +898,7 @@ export async function updateRecord<
   }
 
   const result =
-    await apiPost<T>(
+    await apiPost(
       "update",
       {
         token,
@@ -512,20 +909,43 @@ export async function updateRecord<
     );
 
   const record =
-    result.data || {
-      id,
-      ...data,
-    };
+    result.data &&
+    typeof result.data ===
+      "object" &&
+    !Array.isArray(
+      result.data
+    )
+      ? result.data
+      : {
+          id,
+          ...data,
+        };
 
-  return normalizeRecord(
-    record as T
+  return normalizeRecord<T>(
+    record as unknown as T
   );
 }
+
+// ============================================================
+// DELETE RECORD
+// ============================================================
 
 export async function deleteRecord(
   sheet: string,
   id: string
 ): Promise<ApiResponse> {
+  if (!sheet) {
+    throw new Error(
+      "Sheet name is required."
+    );
+  }
+
+  if (!id) {
+    throw new Error(
+      "Record ID is required."
+    );
+  }
+
   const token =
     getAdminToken();
 
@@ -546,7 +966,7 @@ export async function deleteRecord(
 }
 
 // ============================================================
-// REGISTRATION
+// PLAYER REGISTRATION
 // ============================================================
 
 export async function registerPlayer(
@@ -574,8 +994,15 @@ export async function registerPlayer(
       }
     );
 
-  return result.data || result;
+  return (
+    result.data ||
+    result
+  );
 }
+
+// ============================================================
+// COLLEGE REGISTRATION
+// ============================================================
 
 export async function registerCollege(
   data: ApiRecord
@@ -595,43 +1022,79 @@ export async function registerCollege(
       }
     );
 
-  return result.data || result;
+  return (
+    result.data ||
+    result
+  );
 }
 
 // ============================================================
-// AUTH
+// ADMIN LOGIN
 // ============================================================
 
 export async function login(
   email: string,
   password: string
 ) {
+  const cleanEmail =
+    String(
+      email || ""
+    ).trim();
+
+  const cleanPassword =
+    String(
+      password || ""
+    );
+
+  if (!cleanEmail) {
+    throw new Error(
+      "Email is required."
+    );
+  }
+
+  if (!cleanPassword) {
+    throw new Error(
+      "Password is required."
+    );
+  }
+
   const result =
     await apiPost(
       "login",
       {
-        email,
-        password,
+        email:
+          cleanEmail,
+        password:
+          cleanPassword,
       }
     );
 
   if (!result.token) {
     throw new Error(
       result.error ||
+        result.message ||
         "Login failed. No session token received."
     );
   }
 
+  // Save session immediately.
   setAdminSession(
     result.token,
     result.admin || {}
   );
 
   return {
-    token: result.token,
-    admin: result.admin || {},
+    token:
+      result.token,
+
+    admin:
+      result.admin || {},
   };
 }
+
+// ============================================================
+// ADMIN LOGOUT
+// ============================================================
 
 export async function logout() {
   const token =
@@ -641,9 +1104,18 @@ export async function logout() {
     if (token) {
       await apiPost(
         "logout",
-        { token }
+        {
+          token,
+        }
       );
     }
+  } catch (error) {
+    // Even if server logout fails,
+    // local session must still be cleared.
+    console.warn(
+      "Server logout failed:",
+      error
+    );
   } finally {
     clearAdminSession();
   }
@@ -651,20 +1123,6 @@ export async function logout() {
 
 // ============================================================
 // UPDATE PASSWORD
-//
-// NOTE: this calls an "updatePassword" action on the Google
-// Apps Script backend. The frontend was already wired to a
-// `updatePassword()` call in AdminLayout.tsx with nothing behind
-// it - this adds the client-side half. The Apps Script web app
-// (outside this repo) needs a matching case in its doPost/doGet
-// action switch, e.g.:
-//
-//   if (action === "updatePassword") {
-//     const admin = getAdminByToken(token);
-//     if (!admin) return jsonError("Invalid session");
-//     updateAdminPasswordInSheet(admin.id, hash(newPassword));
-//     return jsonSuccess({});
-//   }
 // ============================================================
 
 export async function updatePassword(
@@ -679,16 +1137,19 @@ export async function updatePassword(
     );
   }
 
-  const result =
-    await apiPost(
-      "updatePassword",
-      {
-        token,
-        newPassword,
-      }
+  if (!newPassword) {
+    throw new Error(
+      "New password is required."
     );
+  }
 
-  return result;
+  return apiPost(
+    "updatePassword",
+    {
+      token,
+      newPassword,
+    }
+  );
 }
 
 // ============================================================
@@ -708,57 +1169,86 @@ export async function uploadImage(
     );
   }
 
+  if (!file) {
+    throw new Error(
+      "Image file is required."
+    );
+  }
+
   const base64 =
-    await fileToBase64(file);
+    await fileToBase64(
+      file
+    );
 
   return apiPost(
     "uploadImage",
     {
       token,
-      data: base64,
-      fileName: file.name,
+
+      data:
+        base64,
+
+      fileName:
+        file.name,
+
       mimeType:
-        file.type || "image/jpeg",
+        file.type ||
+        "image/jpeg",
+
       bucket,
     }
   );
 }
 
+// ============================================================
+// FILE → BASE64
+// ============================================================
+
 function fileToBase64(
   file: File
 ): Promise<string> {
   return new Promise(
-    (resolve, reject) => {
+    (
+      resolve,
+      reject
+    ) => {
       const reader =
         new FileReader();
 
-      reader.onload = () => {
-        const result =
-          String(
-            reader.result || ""
+      reader.onload =
+        () => {
+          const result =
+            String(
+              reader.result ||
+                ""
+            );
+
+          const commaIndex =
+            result.indexOf(
+              ","
+            );
+
+          resolve(
+            commaIndex >= 0
+              ? result.slice(
+                  commaIndex + 1
+                )
+              : result
           );
+        };
 
-        const commaIndex =
-          result.indexOf(",");
+      reader.onerror =
+        () => {
+          reject(
+            new Error(
+              "Unable to read image file"
+            )
+          );
+        };
 
-        resolve(
-          commaIndex >= 0
-            ? result.slice(
-                commaIndex + 1
-              )
-            : result
-        );
-      };
-
-      reader.onerror = () => {
-        reject(
-          new Error(
-            "Unable to read image file"
-          )
-        );
-      };
-
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(
+        file
+      );
     }
   );
 }
@@ -768,26 +1258,35 @@ function fileToBase64(
 // ============================================================
 
 export default {
+  // Generic API
   apiGet,
   apiPost,
 
+  // Sheets
   getSheet,
   adminGet,
 
+  // CRUD
   createRecord,
   updateRecord,
   deleteRecord,
 
+  // Registration
   registerPlayer,
   registerCollege,
 
+  // Authentication
   login,
   logout,
   updatePassword,
 
+  // Uploads
   uploadImage,
+
+  // Testing
   testConnection,
 
+  // Session
   getAdminToken,
   getAdmin,
   setAdminSession,
