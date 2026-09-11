@@ -26,7 +26,7 @@ const ManageCommittee = () => {
         { key: "name", label: "Name", type: "text", required: true },
         { key: "designation", label: "Designation", type: "text", required: true },
         { key: "role", label: "Role", type: "text", required: true },
-        { key: "institution", label: "Institution", type: "text", required: true },
+        { key: "institution", label: "Institution", type: "text" },
         { key: "display_order", label: "Display Order", type: "number" },
         {
           key: "image",
