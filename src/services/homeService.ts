@@ -13,6 +13,7 @@ export interface HomeResponse {
   matchCount?: number;
   upcomingMatches?: any[];
   notices?: any[];
+  currentSeason?: string;
   timestamp?: string;
 }
 

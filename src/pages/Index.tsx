@@ -41,6 +41,8 @@ const Index = () => {
 
   const { data: homeData } = useHomeData();
 
+  const currentSeason = homeData?.currentSeason ?? "2026-27";
+
   const sports = homeData?.sports ?? [];
   const activeCollegeCount = homeData?.activeCollegeCount ?? 0;
   const activePlayerCount = homeData?.activePlayerCount ?? 0;
@@ -152,7 +154,7 @@ const Index = () => {
                   "hsl(25 100% 60%)",
               }}
             >
-              🏆 Season 2025-26 Now Live
+              🏆 Season {currentSeason} Now Live
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-black text-white leading-tight mb-6">
