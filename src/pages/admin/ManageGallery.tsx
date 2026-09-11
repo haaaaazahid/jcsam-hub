@@ -8,7 +8,7 @@ import {
   useSports,
 } from "@/hooks/useAppData";
 
-import { uploadImage } from "@/services/api";
+import { uploadToCloudinary } from "@/services/cloudinaryService";
 
 import {
   FiUpload,
@@ -64,7 +64,7 @@ const ManageGallery = () => {
   // ============================================================
   // MULTI IMAGE UPLOAD
   // IMPORTANT:
-  // Pass the ORIGINAL File directly to uploadImage().
+  // Pass the original File directly to Cloudinary.
   // Do NOT convert it to Base64 here.
   // api.ts handles Base64 conversion internally.
   // ============================================================
@@ -138,24 +138,10 @@ const ManageGallery = () => {
           }
 
           console.log(
-            `Uploading ${file.name} to Google Drive...`
+            `Uploading ${file.name} to Cloudinary...`
           );
 
-          // ======================================================
-          // IMPORTANT FIX
-          //
-          // DO NOT:
-          //
-          // const base64 = await fileToBase64(file);
-          // await uploadImage(base64, ...)
-          //
-          // uploadImage() expects a File.
-          // ======================================================
-
-          const uploadResult = await uploadImage(
-            file,
-            "gallery"
-          );
+          const uploadResult = await uploadToCloudinary(file);
 
           console.log(
             `Upload result for ${file.name}:`,
@@ -671,3 +657,5 @@ const ManageGallery = () => {
 };
 
 export default ManageGallery;
+
+
