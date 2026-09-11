@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useDashboardStats, usePlayers } from "@/hooks/useAppData";
+import { useDashboardStats } from "@/hooks/useAppData";
 import StatCounter from "@/components/StatCounter";
 import {
   FiUsers,
@@ -62,13 +62,7 @@ const AdminDashboard = () => {
     data: stats,
     isLoading,
   } = useDashboardStats();
-
-  const {
-    data: playersResult,
-    isLoading: playersLoading,
-  } = usePlayers();
-
-  if (isLoading || playersLoading) {
+    if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <FiLoader className="w-8 h-8 animate-spin text-primary" />
@@ -100,53 +94,6 @@ const AdminDashboard = () => {
     stats?.sports
   );
 
-  const allPlayers = safeArray(
-    playersResult
-  );
-
-  // ==========================================================
-  // DEBUG
-  // ==========================================================
-
-  console.log(
-    "ADMIN DASHBOARD NORMALIZED DATA"
-  );
-
-  console.log(
-    "colleges:",
-    Array.isArray(colleges),
-    colleges.length
-  );
-
-  console.log(
-    "players:",
-    Array.isArray(players),
-    players.length
-  );
-
-  console.log(
-    "allPlayers:",
-    Array.isArray(allPlayers),
-    allPlayers.length
-  );
-
-  console.log(
-    "schedules:",
-    Array.isArray(schedules),
-    schedules.length
-  );
-
-  console.log(
-    "notices:",
-    Array.isArray(notices),
-    notices.length
-  );
-
-  console.log(
-    "sports:",
-    Array.isArray(sports),
-    sports.length
-  );
 
   // ==========================================================
   // UPCOMING MATCHES
@@ -250,8 +197,7 @@ const AdminDashboard = () => {
           .toLowerCase() === "pending"
     );
 
-  const pendingPlayers =
-    allPlayers.filter(
+  const pendingPlayers = safeArray(stats?.players).filter(
       (p: any) =>
         String(p?.status || "")
           .toLowerCase() === "pending"

@@ -981,11 +981,12 @@ export function useDashboardStats() {
 
     enabled: Boolean(token),
 
-    staleTime: 30_000,
+    staleTime: 120_000,
 
-    retry: 1,
+      retry: 1,
 
-    refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
   });
 }
 
