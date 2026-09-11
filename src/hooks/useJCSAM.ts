@@ -24,6 +24,23 @@ import { noticeService } from "@/services/noticeService";
 import { committeeService } from "@/services/committeeService";
 import { galleryService } from "@/services/galleryService";
 import { dashboardService } from "@/services/dashboardService";
+import { homeService } from "@/services/homeService";
+
+// ============================================================
+// HOMEPAGE
+// ============================================================
+
+export function useHomeData() {
+  return useQuery({
+    queryKey: ["home"],
+    queryFn: () => homeService.getData(),
+    staleTime: 120_000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+}
 
 // ============================================================
 // SPORTS
@@ -981,12 +998,11 @@ export function useDashboardStats() {
 
     enabled: Boolean(token),
 
-    staleTime: 120_000,
+    staleTime: 30_000,
 
-      retry: 1,
+    retry: 1,
 
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+    refetchOnWindowFocus: true,
   });
 }
 

@@ -1,13 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-import {
-  useSports,
-  useColleges,
-  usePlayers,
-  useSchedules,
-  useNotices,
-} from "@/hooks/useAppData";
+import { useHomeData } from "@/hooks/useAppData";
 
 import StatCounter from "@/components/StatCounter";
 
@@ -45,32 +39,14 @@ const Index = () => {
   // DATA
   // ==========================================================
 
-  const { data: sports = [] } = useSports();
-  const { data: colleges = [] } = useColleges();
-  const { data: players = [] } = usePlayers();
-  const { data: allSchedules = [] } = useSchedules();
-  const { data: notices = [] } = useNotices();
+  const { data: homeData } = useHomeData();
 
-  // ==========================================================
-  // FILTERED DATA
-  // ==========================================================
-
-  const activeColleges = colleges.filter(
-    (college: any) =>
-      college.status === "active"
-  );
-
-  const activePlayers = players.filter(
-    (player: any) =>
-      player.status === "active"
-  );
-
-  const upcomingMatches = allSchedules
-    .filter(
-      (schedule: any) =>
-        schedule.status === "upcoming"
-    )
-    .slice(0, 3);
+  const sports = homeData?.sports ?? [];
+  const activeCollegeCount = homeData?.activeCollegeCount ?? 0;
+  const activePlayerCount = homeData?.activePlayerCount ?? 0;
+  const matchCount = homeData?.matchCount ?? 0;
+  const upcomingMatches = homeData?.upcomingMatches ?? [];
+  const notices = homeData?.notices ?? [];
 
   // ==========================================================
   // RENDER
@@ -282,7 +258,7 @@ const Index = () => {
           />
 
           <StatCounter
-            end={activeColleges.length}
+            end={activeCollegeCount}
             label="Colleges"
             icon={
               <FiUsers className="w-8 h-8" />
@@ -291,7 +267,7 @@ const Index = () => {
           />
 
           <StatCounter
-            end={activePlayers.length}
+            end={activePlayerCount}
             label="Players"
             icon={
               <FiAward className="w-8 h-8" />
@@ -301,7 +277,7 @@ const Index = () => {
           />
 
           <StatCounter
-            end={allSchedules.length}
+            end={matchCount}
             label="Matches"
             icon={
               <FiCalendar className="w-8 h-8" />
